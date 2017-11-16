@@ -35,13 +35,13 @@ def databaseToDataframe(database):
 def calculateMarketStats(dataframe):
 
 	#calculate SMA at different time intervals
-	calculateSMA(dataframe, 10)
-	calculateSMA(dataframe, 100)
+	dataframe_first_sma = calculateSMA(dataframe, 10)
+	dataframe_second_sma = calculateSMA(dataframe_first_sma, 100)
 
 	#add rolling mean
-	updated_dataframe = addReturns(dataframe)
+	dataframe_returns = addReturns(dataframe_second_sma)
 
-	return updated_dataframe
+	return dataframe_returns
 
 def addReturns(dataframe):
 
@@ -63,11 +63,29 @@ def addReturns(dataframe):
 
 
 def calculateSMA(dataframe, ticks):
+	sma_list = []
+
 	df_tail = dataframe.tail(ticks)
 	price_sum = df_tail['price'].sum()
 	sma = price_sum/ticks
-	print('Simple Moving Average over {} ticks: {}'.format(ticks, sma))
-	return sma
+
+	for x in range (0, len(dataframe)):
+		if x < len(dataframe)-ticks:
+			sma_list.append(0)
+		else:
+			sma_list.append(sma)
+
+	sma_calc = pd.Series(sma_list)
+	column_name = 'sma_{}'.format(ticks)
+	print(column_name)
+
+	dataframe = dataframe.assign(column_name=sma_calc.values)
+	#dataframe.rename({'$column_name':column_name}, axis=1)
+
+	print(dataframe)
+
+	#print('Simple Moving Average over {} ticks: {}'.format(ticks, sma))
+	return dataframe
 
 #NEED TO DOUBLE CHECK EMA CALCULATIONS
 def calculateEMA(dataframe, ticks):
