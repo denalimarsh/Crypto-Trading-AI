@@ -36,10 +36,11 @@ def calculateMarketStats(dataframe):
 
 	#calculate SMA at different time intervals
 	dataframe_first_sma = calculateSMA(dataframe, 10)
-	dataframe_second_sma = calculateSMA(dataframe_first_sma, 100)
+	dataframe_second_sma = calculateSMA(dataframe_first_sma, 20)
+	dataframe_third_sma = calculateSMA(dataframe_second_sma, 100)
 
-	#add rolling mean
-	dataframe_returns = addReturns(dataframe_second_sma)
+	#add percentage change by interval
+	dataframe_returns = addReturns(dataframe_third_sma)
 
 	return dataframe_returns
 
@@ -47,7 +48,7 @@ def addReturns(dataframe):
 
 	percentage_change = []
 
-	row_iterator = df.iterrows()
+	row_iterator = dataframe.iterrows()
 	_, last = row_iterator.next()  # take first item from row_iterator
 	percentage_change.append(0) 	# first item no percentage change
 
@@ -63,31 +64,53 @@ def addReturns(dataframe):
 
 
 def calculateSMA(dataframe, ticks):
-	sma_list = []
 
+	#Calculate Simple Moving Average over specified tick count
 	df_tail = dataframe.tail(ticks)
 	price_sum = df_tail['price'].sum()
 	sma = price_sum/ticks
+	print('Simple Moving Average over {} ticks: {}'.format(ticks, sma))
 
+	#Populate SMA into list
+	sma_list = []
 	for x in range (0, len(dataframe)):
 		if x < len(dataframe)-ticks:
 			sma_list.append(0)
 		else:
 			sma_list.append(sma)
 
+	#Concatenate SMA list into dataframe
 	sma_calc = pd.Series(sma_list)
-	column_name = 'sma_{}'.format(ticks)
-	print(column_name)
-
 	dataframe = dataframe.assign(column_name=sma_calc.values)
-	#dataframe.rename({'$column_name':column_name}, axis=1)
 
-	print(dataframe)
+	#Rename to unique column name with tick count
+	column_name = 'sma_{}'.format(ticks)
+	dataframe = dataframe.rename(columns={'column_name': column_name})
 
-	#print('Simple Moving Average over {} ticks: {}'.format(ticks, sma))
 	return dataframe
 
-#NEED TO DOUBLE CHECK EMA CALCULATIONS
+def main_execute():
+	db = initializeDatabase()
+	df = databaseToDataframe(db)
+	processed_data = calculateMarketStats(df)
+	
+	#predict_price(df, 50, 10)
+
+	print(processed_data)
+
+	#plot the current
+	processed_data['price'].plot()
+	plt.show()
+
+	db.close()
+
+main_execute()
+
+
+#function to calculate exponential moving average
+#WARNING: ema values incorrect
+
+'''
 def calculateEMA(dataframe, ticks):
 
 	#prepare prices and multiplier
@@ -113,6 +136,9 @@ def calculateEMA(dataframe, ticks):
 			ema = ema_stack.pop()
 			print('Exponential Moving Average over {} ticks: {}'.format(ticks, ema))
 			return ema
+'''
+
+#function to plot linear regression model 
 
 '''
 def show_plot(dataframe, ticks):
@@ -131,8 +157,11 @@ def show_plot(dataframe, ticks):
 
 	return
 
+'''
 
+#function to predict price
 
+'''
 def predict_price(dataframe, ticks, prediction_tick):
 
 	#pair dates with ticks in dictionary
@@ -158,29 +187,4 @@ def predict_price(dataframe, ticks, prediction_tick):
 	predicted_price = linear_mod.predict(prediction)
 	return predicted_price[0][0],linear_mod.coef_[0][0],linear_mod.intercept_[0]
 
-
-
 '''
-db = initializeDatabase()
-df = databaseToDataframe(db)
-
-processed_data = calculateMarketStats(df)
-#print(processed_data)
-#predict_price(df, 50, 10)
-
-'''
-digits = datasets.load_digits()
-classifier = svm.SVC(gamma=0.001, C=100)
-print(len(digits.data))
-x = digits.data[:-1]
-y = digits.target[:-1]
-classifier.fit(x,y)
-print('Prediction:',classifier.predict(digits.data[-1]))
-plt.imshow(digits.images[-1], cmap=plt.cm.gray_r, interpolation="nearest")
-plt.show()
-'''
-
-df['price'].plot()
-plt.show()
-
-db.close()
