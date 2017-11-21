@@ -95,6 +95,6 @@ def startMarketDataStream(exchange, market, tick_delay):
 
 db = initializeDatabase()
 exchange = initializeExchange()
-startMarketDataStream(exchange, 'ETH/USD', 15)
+startMarketDataStream(exchange, 'ETH/USD', 45)
 #clearDatabase()
 db.close()

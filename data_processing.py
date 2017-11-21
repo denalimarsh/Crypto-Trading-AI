@@ -1,15 +1,15 @@
 from __future__ import division
 
-import numpy as np
 import MySQLdb
+import numpy as np
 import pandas as pd
 import pandas_datareader as web
 import matplotlib.pyplot as plt
 from matplotlib import style
 style.use('ggplot')
-from sklearn import datasets
-from sklearn import svm
-from sklearn import linear_model
+from sklearn import datasets, linear_model
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn import preprocessing
 from ConfigParser import SafeConfigParser
 
 config = SafeConfigParser()
@@ -48,15 +48,18 @@ def addReturns(dataframe):
 
 	percentage_change = []
 
+	#take first item (no percentage change) from row_iterator
 	row_iterator = dataframe.iterrows()
-	_, last = row_iterator.next()  # take first item from row_iterator
-	percentage_change.append(0) 	# first item no percentage change
+	_, last = row_iterator.next()
+	percentage_change.append(0)
 
+	#calculate percentage change, add to list
 	for i, row in row_iterator:
 		price_delta = (row['price']-last['price'])/last['price']
 		percentage_change.append(price_delta)
 		last = row
 
+	#assign values back to the dataframe
 	returns = pd.Series(percentage_change)
 	dataframe = dataframe.assign(returns=returns.values)
 
@@ -98,7 +101,7 @@ def main_execute():
 
 	print(processed_data)
 
-	#plot the current
+	#plot the current data by price
 	processed_data['price'].plot()
 	plt.show()
 
