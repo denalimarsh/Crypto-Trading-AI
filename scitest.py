@@ -1,10 +1,11 @@
 print(__doc__)
 
-
 import MySQLdb
 import numpy as numpy
 from numpy import array
 import pandas as pd
+
+import re
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -37,59 +38,42 @@ def databaseToDataframe(database):
 database = initializeDatabase()
 dataframe = databaseToDataframe(database)
 
-print(type(dataframe))
+dataframe_prices = dataframe['price'].values
+dataframe_highs = dataframe['high'].values
+dataframe_lows = dataframe['low'].values
 
-# Load the diabetes dataset
-diabetes = datasets.load_diabetes()
+#Strip strings into date-time format
+dataframe_time = dataframe.index.values
+for z in range (0, len(dataframe_time)):
+  this_time = dataframe_time[z]
+  this_time = re.sub('\+00:00$', '', this_time)
+  dataframe_time[z] = this_time
 
-dataframe_np = dataframe.as_matrix(columns=None)
-print(dataframe_np)
+pandas_date = pd.to_datetime(dataframe_time)
+numpy_date = numpy.array(pandas_date,dtype=numpy.datetime64)
 
-'''
-print('\nDataframe:')
-print(dataframe)
-print()
+#dataframe_np = dataframe.as_matrix(columns=None)
+#print(dataframe_np)
 
-print('\nDiabetes:')
-print(diabetes)
-print()
-'''
-
-# Use only one feature
-diabetes_X = diabetes.data[:, np.newaxis, 2]
-
-print(dataframe_np.shape)
-
-#price_reshaped = dataframe_np.reshape(-1, 1)
-
-#print(type(dataframe_price))
-
-
-#print('\nDataframe - PRICE:')
-#print(price_reshaped)
+price_reshaped = dataframe_prices.reshape(-1, 1)
+high_reshaped = dataframe_prices.reshape(-1, 1)
 
 # standardize the data attributes
-standardized_price = preprocessing.scale(dataframe_np)
+standardized_price = preprocessing.scale(price_reshaped)
+standardized_high = preprocessing.scale(high_reshaped)
 
+'''
 print('\nSTANDARDIZED:')
 print(standardized_price)
+'''
 
 # Split the data into training/testing sets
 price_x_train = standardized_price[:-20]
 price_x_test = standardized_price[-20:]
 
-'''
-price_headers = []
-for x in range(0, dataframe_np):
-  price_headers.append('price')
-
-price_y = array(price_headers)
-'''
-
-
 # Split the targets into training/testing sets
-price_y_train = ['price']
-price_y_test = ['price']
+price_y_train = standardized_high[:-20]
+price_y_test = standardized_high[-20:]
 
 # Create linear regression object
 regr = linear_model.LinearRegression()
@@ -111,8 +95,8 @@ print("Mean squared error: %.2f"
 print('Variance score: %.2f' % r2_score(price_y_test, price_y_pred))
 
 # Plot outputs
-plt.scatter(price_test, price_y_test,  color='black')
-plt.plot(price_test, price_y_pred, color='red', linewidth=1)
+plt.scatter(price_x_test, price_y_test,  color='black')
+plt.plot(price_x_test, price_y_pred, color='red', linewidth=1)
 
 plt.xticks(())
 plt.yticks(())

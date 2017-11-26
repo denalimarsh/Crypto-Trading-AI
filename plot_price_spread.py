@@ -47,15 +47,13 @@ def plot_price_spread(dataframe):
     this_time = re.sub('\+00:00$', '', this_time)
     dataframe_time[z] = this_time
 
-  print(dataframe_time)
-
   pandas_date = pd.to_datetime(dataframe_time)
   numpy_date = numpy.array(pandas_date,dtype=numpy.datetime64)
   date_shortened = numpy_date[-5000:]
 
   plt.figure()
   plt.title('Current, Low and High (24 hour) Prices for Ethereum')
-  plt.xlabel('Price $USD')
+  plt.xlabel('Price ($USD)')
   plt.ylabel('Time')
   plt.plot_date(x=date_shortened, y=dataframe_prices[-5000:], fmt="r-", color='g', linewidth=1)
   plt.plot_date(x=date_shortened, y=dataframe_highs[-5000:], fmt="r-", color='r', linewidth=1)
@@ -67,21 +65,21 @@ database = initializeDatabase()
 dataframe = databaseToDataframe(database)
 plot_price_spread(dataframe)
 
+'''
 
-#Show PRICE-HIGH correlation:
+plt.figure()
+plt.title('Correlation between Price and High (24 hour) - ETH')
+plt.xlabel('Price')
+plt.ylabel('High (24 hr)')
+axis = plt.axis([300, 400, 300, 400])
+m, b = numpy.polyfit(x, y, 1)
+plt.grid(True)
+plt.plot(x, y, 'k.')
+plt.plot(x, m*x + b, '-')
+plt.show()
+
 '''
-def plot_corr_price_high():
-  plt.figure()
-  plt.title('Correlation between Price and High (24 hour) - ETH')
-  plt.xlabel('Price')
-  plt.ylabel('High (24 hr)')
-  axis = plt.axis([300, 400, 300, 400])
-  m, b = numpy.polyfit(x, y, 1)
-  plt.grid(True)
-  plt.plot(x, y, 'k.')
-  plt.plot(x, m*x + b, '-')
-  plt.show()
-'''
+
 
 '''
 #some helpful data processing:
