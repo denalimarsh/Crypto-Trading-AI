@@ -4,9 +4,11 @@ import MySQLdb
 import numpy as np
 import pandas as pd
 import pandas_datareader as web
+
 import matplotlib.pyplot as plt
 from matplotlib import style
 style.use('ggplot')
+
 from sklearn import datasets, linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn import preprocessing

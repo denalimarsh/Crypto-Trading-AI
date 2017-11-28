@@ -1,3 +1,5 @@
-### Files ###
+### Database and Exchanges ###
 config.ini
-client_secret.json 
+
+### Google Sheets ###
+client_secret.json
