@@ -2,4 +2,4 @@
 config.ini
 
 ### Google Sheets ###
-client_secret.json
+sheets.json
