@@ -15,7 +15,7 @@ from sklearn import preprocessing
 from ConfigParser import SafeConfigParser
 
 config = SafeConfigParser()
-config.read('config.ini')
+config.read('../Config/config.ini')
 
 def initializeDatabase():
 	try:
