@@ -5,6 +5,10 @@ import operator
 import urllib2
 from bs4 import BeautifulSoup
 
+import pdb 
+
+import re
+
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pprint
@@ -31,33 +35,26 @@ def get_currencies_prices(url, currencyPrices):
   bitcoin_price = bitcoin_box.text.strip() 
   currencyPrices.update({'BTC':bitcoin_price})
 
-  get_individual_prices(currencyPrices)
+  bitcoin_box = currency_soup.find("a", attrs={"href": "/currencies/bitcoin/#markets"})
+  bitcoin_price = bitcoin_box.text.strip() 
+  currencyPrices.update({'BTC':bitcoin_price})
 
-def get_individual_prices(currencyPrices):
-
-  substratum_page = 'https://coinmarketcap.com/currencies/substratum/'
-  sub_page = urllib2.urlopen(substratum_page)
-  substratum_soup = BeautifulSoup(sub_page, "html.parser")
-
-  substratum_box = substratum_soup.find("span", attrs={"id": "quote_price"})
+  substratum_box = currency_soup.find("a", attrs={"href": "/currencies/substratum/#markets"})
   substratum_price = substratum_box.text.strip() 
   currencyPrices.update({'SUB':substratum_price})
 
-  zeroex_page = 'https://coinmarketcap.com/currencies/0x/'
-  zrx_page = urllib2.urlopen(zeroex_page)
-  zeroex_soup = BeautifulSoup(zrx_page, "html.parser")
-
-  zrx_box = zeroex_soup.find("span", attrs={"id": "quote_price"})
-  zrx_price = zrx_box.text.strip() 
-  currencyPrices.update({'ZRX':zrx_price})
-
+  zerox_box = currency_soup.find("a", attrs={"href": "/currencies/0x/#markets"})
+  zerox_price = zerox_box.text.strip() 
+  currencyPrices.update({'ZRX':zerox_price})
 
 def update_spreadsheet(prices):
 
   print ('\n...calculating positions...')
 
+  #pdb.set_trace()
+
   scope = ['https://spreadsheets.google.com/feeds']
-  creds = ServiceAccountCredentials.from_json_keyfile_name('sheets.json', scope)
+  creds = ServiceAccountCredentials.from_json_keyfile_name('../Config/sheets.json', scope)
   client = gspread.authorize(creds)
 
   sheet = client.open('Crypto Positions').sheet1
@@ -100,7 +97,7 @@ def print_prices(prices):
 def main_execute():
   prices = {'IOT':'', 'BTC':'', 'SC':'', 'ETH':'','ZRX':'','SUB':''}
 
-  get_currencies_prices("https://coinmarketcap.com/coins/", prices)
+  get_currencies_prices("https://coinmarketcap.com/all/views/all/", prices)
 
   sorted_prices = sorted(prices.items(), key=operator.itemgetter(1), reverse=True)
   print print_prices(sorted_prices)

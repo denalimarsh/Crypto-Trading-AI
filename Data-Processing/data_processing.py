@@ -1,8 +1,5 @@
 from __future__ import division
 
-import dateutil.parser
-import time
-
 import MySQLdb
 import numpy as np
 import pandas as pd
@@ -15,17 +12,10 @@ style.use('ggplot')
 from sklearn import datasets, linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn import preprocessing
-
-import os
 from ConfigParser import SafeConfigParser
 
-if os.path.exists('../Config/config.ini'):
-	print('exists!')
-else:
-	print('error!')
-
 config = SafeConfigParser()
-config.read('../Config/config.ini')
+config.read('config.ini')
 
 def initializeDatabase():
 	try:

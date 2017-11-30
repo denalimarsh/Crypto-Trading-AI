@@ -5,10 +5,16 @@ import ccxt
 import MySQLdb
 import dateutil.parser
 import time
+import os
 from ConfigParser import SafeConfigParser
 
+if os.path.exists('../Config/config.ini'):
+	print('exists!')
+else:
+	print('error!')
+
 config = SafeConfigParser()
-config.read('config.ini')
+config.read('../Config/config.ini')
 
 def initializeDatabase():
 	try:
