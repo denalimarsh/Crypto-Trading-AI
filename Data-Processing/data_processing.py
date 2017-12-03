@@ -1,17 +1,24 @@
+# coding=utf-8
+
 from __future__ import division
 
 import MySQLdb
 import numpy as np
 import pandas as pd
 import pandas_datareader as web
+import scipy.stats as stats
 
 import matplotlib.pyplot as plt
 from matplotlib import style
 style.use('ggplot')
 
-from sklearn import datasets, linear_model
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn import preprocessing
+import sklearn
+from sklearn import model_selection
+from sklearn.linear_model import LinearRegression
+from sklearn.datasets import load_boston
+
+import pdb
+
 from ConfigParser import SafeConfigParser
 
 config = SafeConfigParser()
@@ -94,18 +101,58 @@ def calculateSMA(dataframe, ticks):
 
 	return dataframe
 
+def price_prediction(processed_data):
+
+	financial_data = processed_data
+
+	boston = load_boston()
+	bos = pd.DataFrame(boston.data)
+
+	bos.head()
+	bos.columns = boston.feature_names
+	bos.head()
+
+	bos['PRICE'] = boston.target
+
+	#Y = boston housing price(also called “target” data in Python)
+	#X = all the other features (or independent variables)
+
+	X = bos.drop('PRICE', axis = 1)
+
+	X_eth = financial_data.drop('price', axis = 1)
+
+	#pdb.set_trace()
+
+	lm = LinearRegression()
+
+	#lm.fit() -> fits a linear model
+	lm.fit(X_eth, financial_data.price)
+
+	print 'Estimated intercept coefficent:', lm.intercept_
+	print 'Number of coefficients:', len(lm.coef_)
+
+	pd.DataFrame(zip(X_eth.columns, lm.coef_), columns = ['features', 'estimatedCoefficients'])
+
+	#plot to show price vs predicted price:
+
+	#lm.predict() functionality: Predict Y using the linear model with estimated coefficients
+
+	plt.scatter(X_eth.volume, lm.predict(X_eth), c='b', s=2)
+	plt.xlabel('Prices: $Y_i$')
+	plt.ylabel('Predicted prices: $\hat{Y}_i$')
+	plt.title('Price vs Predicted Prices: $Y_i$ vs $\hat{Y}_i$')
+	plt.show()
+
 def main_execute():
 	db = initializeDatabase()
 	df = databaseToDataframe(db)
-	processed_data = calculateMarketStats(df)
-	
-	#predict_price(df, 50, 10)
+	processed_df = calculateMarketStats(df)
 
-	print(processed_data)
+	price_prediction(processed_df)
 
 	#plot the current data by price
-	processed_data['price'].plot()
-	plt.show()
+	#processed_df['price'].plot()
+	#plt.show()
 
 	db.close()
 

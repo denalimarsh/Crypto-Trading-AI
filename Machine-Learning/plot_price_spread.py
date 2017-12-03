@@ -6,6 +6,7 @@ from numpy import array
 import pandas as pd
 
 import re
+import datetime
 
 import matplotlib.pyplot as plt
 from sklearn import datasets, linear_model
@@ -50,6 +51,9 @@ def plot_price_spread(dataframe):
   pandas_date = pd.to_datetime(dataframe_time)
   numpy_date = numpy.array(pandas_date,dtype=numpy.datetime64)
   date_shortened = numpy_date[-1000:]
+
+  import pdb
+  pdb.set_trace()
 
   plt.figure()
   plt.title('Current, Low and High (24 hour) Prices for Ethereum')
