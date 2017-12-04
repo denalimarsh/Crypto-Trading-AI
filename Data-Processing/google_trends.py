@@ -1,39 +1,109 @@
+# coding=utf-8
+
 from pytrends.request import TrendReq
+
 import pandas as pd
+import numpy as np
+
+import matplotlib.pyplot as plt
+from matplotlib import style
+style.use('ggplot')
+
+import sklearn
+from sklearn import model_selection
+from sklearn.linear_model import LinearRegression
+from sklearn.datasets import load_boston
 
 import datetime
 import pdb
 
-# Login to Google. Only need to run this once, the rest of requests will use the same session.
-pytrend = TrendReq()
+def fetch_data():
+  # Login to Google. Only need to run this once, the rest of requests will use the same session.
+  pytrend = TrendReq()
 
-# Create payload and capture API tokens. Only needed for interest_over_time(), interest_by_region() & related_queries()
-pytrend.build_payload(kw_list=['bitcoin', 'ethereum', 'iota'])
+  # Create payload and capture API tokens. Only needed for interest_over_time(), interest_by_region() & related_queries()
+  pytrend.build_payload(kw_list=['bitcoin', 'ethereum', 'iota'])
 
-# Interest Over Time
-interest_over_time_df = pytrend.interest_over_time()
+  #get interest over time
+  google_trends_imported_df = pytrend.interest_over_time()
+  google_trends_full_df = google_trends_imported_df.drop('isPartial', axis = 1)
 
-eth_data_imported_df = pd.read_csv('eth_usd_weekly_historical_data.csv')
+  #import historical ethereum price data
+  eth_data_imported_df = pd.read_csv('eth_usd_weekly_historical_data.csv')
+  #prepare data: index ethereum dataframe by datetime
+  my_dates = pd.to_datetime(eth_data_imported_df['Date'])
+  eth_data_drop_date = eth_data_imported_df.drop('Date', axis = 1)
+  eth_data_indexed = eth_data_drop_date.set_index(my_dates)
+  eth_data_full_df = eth_data_indexed.iloc[::-1]
 
-#store dates
-my_dates = pd.to_datetime(eth_data_imported_df['Date'])
+  #get the last 36 weeks of data from both dataframes
+  eth_data_df = eth_data_full_df[-36:]
+  google_trends_df = google_trends_full_df[-36:]
 
-eth_data_drop_date = eth_data_imported_df.drop('Date', axis = 1)
+  processed_trend_data = pd.concat([eth_data_df, google_trends_df], axis=1)
 
-eth_data_df = eth_data_drop_date.set_index(my_dates)
+  return processed_trend_data
+
+def price_prediction(processed_data):
+
+  financial_data = processed_data
+
+  #boston = load_boston()
+  #bos = pd.DataFrame(boston.data)
+
+  #bos.head()
+  #bos.columns = boston.feature_names
+  #bos.head()
+
+  #bos['PRICE'] = boston.target
+
+  #Y = boston housing price(also called “target” data in Python)
+  #X = all the other features (or independent variables)
+
+  #X = bos.drop('PRICE', axis = 1)
+
+  #ßpdb.set_trace()
+
+  x_independent_variables = financial_data.drop('Price', axis = 1)
+
+  #pdb.set_trace()
+
+  lm = LinearRegression()
+
+  #lm.fit() -> fits a linear model
+  lm.fit(x_independent_variables, financial_data.Price)
+
+  print 'Estimated intercept coefficent:', lm.intercept_
+  print 'Number of coefficients:', len(lm.coef_)
+
+  pd.DataFrame(zip(x_independent_variables.columns, lm.coef_), columns = ['features', 'estimatedCoefficients'])
+
+  #plot to show price vs predicted price:
+
+  #lm.predict() functionality: Predict Y using the linear model with estimated coefficients
+
+  plt.scatter(x_independent_variables.ethereum, lm.predict(x_independent_variables), c='b', s=2)
+  plt.xlabel('Google Trends Weekly Score')
+  plt.ylabel('Market Price $USD')
+  plt.title('Market Price and Google Trends Analytics (ETH)')
+
+  m, b = np.polyfit(x_independent_variables.ethereum, lm.predict(x_independent_variables), 1)
+
+  plt.plot(x_independent_variables.ethereum, lm.predict(x_independent_variables), '.')
+  plt.plot(x_independent_variables.ethereum, m*x_independent_variables.ethereum + b, '-')
 
 
-'''
-for curr_date in eth_historical_data['Date']:
-  print('Before: %s' % curr_date)
-  datetime.strptime(curr_date, '%Y-%m-%d')
-  print('After: %s' % curr_date)
-'''
+  plt.show()
 
 
-pdb.set_trace()
 
-#print(interest_over_time_df)
+data_block = fetch_data()
+price_prediction(data_block)
+
+
+
+
+
 
 '''
 
