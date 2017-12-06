@@ -42,31 +42,21 @@ def fetch_data():
 
   processed_trend_data = pd.concat([eth_data_df, google_trends_df], axis=1)
 
+  #pdb.set_trace()
+
   return processed_trend_data
 
 def price_prediction(processed_data):
 
-  financial_data = processed_data
+  financial_data = processed_data.dropna(thresh=8)
 
-  #boston = load_boston()
-  #bos = pd.DataFrame(boston.data)
-
-  #bos.head()
-  #bos.columns = boston.feature_names
-  #bos.head()
-
-  #bos['PRICE'] = boston.target
-
+  
   #Y = boston housing price(also called “target” data in Python)
   #X = all the other features (or independent variables)
 
-  #X = bos.drop('PRICE', axis = 1)
-
-  #ßpdb.set_trace()
+  #pdb.set_trace()
 
   x_independent_variables = financial_data.drop('Price', axis = 1)
-
-  #pdb.set_trace()
 
   lm = LinearRegression()
 
@@ -78,20 +68,20 @@ def price_prediction(processed_data):
 
   pd.DataFrame(zip(x_independent_variables.columns, lm.coef_), columns = ['features', 'estimatedCoefficients'])
 
-  #plot to show price vs predicted price:
+  #lm.predict() -> predict Y using the linear model with estimated coefficients
 
-  #lm.predict() functionality: Predict Y using the linear model with estimated coefficients
-
-  plt.scatter(x_independent_variables.ethereum, lm.predict(x_independent_variables), c='b', s=2)
+  #plot axis labels and title
   plt.xlabel('Google Trends Weekly Score')
   plt.ylabel('Market Price $USD')
   plt.title('Market Price and Google Trends Analytics (ETH)')
 
-  m, b = np.polyfit(x_independent_variables.ethereum, lm.predict(x_independent_variables), 1)
+  #plot data points
+  plt.scatter(x_independent_variables.ethereum, lm.predict(x_independent_variables), c='b', s=2)
 
+  #plot correlation betwee- linear regression
+  m, b = np.polyfit(x_independent_variables.ethereum, lm.predict(x_independent_variables), 1)
   plt.plot(x_independent_variables.ethereum, lm.predict(x_independent_variables), '.')
   plt.plot(x_independent_variables.ethereum, m*x_independent_variables.ethereum + b, '-')
-
 
   plt.show()
 
