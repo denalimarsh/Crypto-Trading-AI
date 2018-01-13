@@ -1,6 +1,8 @@
 # import libraries
 # coding: utf-8
 
+import MySQLdb
+
 import operator
 import urllib2
 from bs4 import BeautifulSoup
@@ -12,6 +14,41 @@ import re
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pprint
+
+from ConfigParser import SafeConfigParser
+
+config = SafeConfigParser()
+config.read('../Config/config.ini')
+
+class Coin:
+
+  def __init__(self):
+    self.name = ''
+    self.ticker = ''
+    self.price = 0
+    self.percent_change = 0
+    self.daily_high = 0
+    self.daily_low = 0
+    self.daily_volume = 0
+    self.market_cap = 0
+
+  
+def initializeDatabase():
+  try:
+    db = MySQLdb.connect(host=config.get('sql', 'host'),
+              user=config.get('sql', 'user'),
+              passwd=config.get('sql', 'passwd'),
+              db=config.get('sql', 'sql-mckinley-holdings'))
+    print('Database initialized!')
+  except ValueError:
+    print('Error connecting to database!')
+  
+  return db
+
+def databaseToDataframe(database):
+  df_mysql = pd.read_sql('select * from data;', con=database)
+  df_mysql.set_index('time', inplace=True)
+  return df_mysql
 
 def get_currencies_prices(url, currencyPrices):
 
@@ -32,7 +69,7 @@ def get_currencies_prices(url, currencyPrices):
   currencyPrices.update({'ETH':ethereum_price})
 
   bitcoin_box = currency_soup.find("a", attrs={"href": "/currencies/bitcoin/#markets"})
-  bitcoin_price = bitcoin_box.text.strip() 
+  bitcoin_price = bitcoin_box.text.strip()
   currencyPrices.update({'BTC':bitcoin_price})
 
   bitcoin_box = currency_soup.find("a", attrs={"href": "/currencies/bitcoin/#markets"})
@@ -59,33 +96,53 @@ def update_spreadsheet(prices):
 
   sheet = client.open('Crypto Positions').sheet1
 
-  #add btc to spreadsheet
-  #btcPrice = sheet.cell(7,3).value
-  sheet.update_cell(3, 3, prices['ETH'])
-  sheet.update_cell(8, 3, prices['IOT'])
-  sheet.update_cell(9, 3, prices['SUB'])
-  sheet.update_cell(10, 3, prices['ZRX'])
-  sheet.update_cell(11, 3, prices['SC'])
+  #pdb.set_trace()
+
+  sheet_jason = client.open('Crypto Positions - Jason Marsh').sheet1
+
+  sheet_jason.update_cell(2, 2, prices['BTC'])
+  sheet_jason.update_cell(3, 2, prices['ETH'])
+  sheet_jason.update_cell(4, 2, prices['IOT'])
+  sheet_jason.update_cell(5, 2, prices['SUB'])
+
+  sheet_linde = client.open('Crypto Positions - Linde Wang').sheet1
+
+  sheet_linde.update_cell(3, 3, prices['IOT'])
+  sheet_linde.update_cell(4, 3, prices['ETH'])
+
+  sheet.update_cell(2, 2, prices['BTC'])
+  sheet.update_cell(3, 2, prices['ETH'])
+  sheet.update_cell(4, 2, prices['IOT'])
+  sheet.update_cell(5, 2, prices['SUB'])
+  sheet.update_cell(6, 2, prices['SC'])
 
   print_positions(sheet)
 
 def print_positions(sheet):
 
-  print('\n    Frozen Positions:')
+  print('\n    IRA Positions:')
 
-  print('ETH:    ' + sheet.cell(3,4).value + "   " + sheet.cell(3,5).value)
-  #print('Total:  ' + sheet.cell(4,4).value + "   " + sheet.cell(4,5).value)
+  print('ETH:    ' + sheet.cell(10,4).value + "   " + sheet.cell(10,5).value)
+  print('Total:  ' + sheet.cell(11,4).value + "    " + sheet.cell(11,5).value)
 
-  print('\n    Liquid Positions:')
+  print('\n    Holding Positions:')
 
-  print('IOT:    ' + sheet.cell(8,4).value + "      " + sheet.cell(8,5).value)
-  print('SUB:    ' + sheet.cell(9,4).value + "      " + sheet.cell(9,5).value)
-  print('ZRX:    ' + sheet.cell(10,4).value + "        " + sheet.cell(10,5).value)
-  print('SC:     ' + sheet.cell(11,4).value + "      " + sheet.cell(11,5).value)
-  print('Total:  ' + sheet.cell(12,4).value + "    " + sheet.cell(12,5).value)
+  print('IOT:    ' + sheet.cell(15,4).value + "   " + sheet.cell(15,5).value)
+  print('SUB:    ' + sheet.cell(16,4).value + "   " + sheet.cell(16,5).value)
+  print('SC:     ' + sheet.cell(17,4).value + "   " + sheet.cell(17,5).value)
+  print('Total:  ' + sheet.cell(18,4).value + "    " + sheet.cell(18,5).value)
 
-  print('\nTotal: ' + sheet.cell(14,4).value + "  " +
-   sheet.cell(14,5).value+'\n')
+  print('\n    Short Term Positions:')
+
+  print('IOT:    ' + sheet.cell(22,4).value + "      " + sheet.cell(22,5).value)
+  print('IOT:    ' + sheet.cell(23,4).value + "      " + sheet.cell(23,5).value)
+  print('IOT:    ' + sheet.cell(24,4).value + "      " + sheet.cell(24,5).value)
+  print('SUB:    ' + sheet.cell(25,4).value + "      " + sheet.cell(25,5).value)
+  print('SC:     ' + sheet.cell(26,4).value + "      " + sheet.cell(26,5).value)
+  print('Total:  ' + sheet.cell(27,4).value + "    " + sheet.cell(27,5).value)
+
+  print('\nTotal: ' + sheet.cell(29,4).value + "  " +
+   sheet.cell(29,5).value+'\n')
 
 def print_prices(prices):
 
@@ -105,5 +162,7 @@ def main_execute():
   update_spreadsheet(prices)
 
 main_execute()
+
+#get_cryptocoin_market_data("https://www.worldcoinindex.com/")
 
 

@@ -1,5 +1,7 @@
 # coding=utf-8
 
+import pdb
+
 import json
 import ccxt
 import MySQLdb
@@ -55,6 +57,8 @@ def storeMarketData(exchange, market):
 	tick_low = ticker['low']
 	tick_volume = ticker['quoteVolume']
 	tick_time = dateutil.parser.parse(ticker['datetime'])
+
+	pdb.set_trace()
 
 	#print(ticker)
 
