@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import MySQLdb
+import mysql
 
 import operator
 import urllib2
@@ -97,7 +98,7 @@ def update_spreadsheet(prices):
   sheet = client.open('Crypto Positions').sheet1
 
   #pdb.set_trace()
-
+  '''
   sheet_jason = client.open('Crypto Positions - Jason Marsh').sheet1
 
   sheet_jason.update_cell(2, 2, prices['BTC'])
@@ -109,6 +110,7 @@ def update_spreadsheet(prices):
 
   sheet_linde.update_cell(3, 3, prices['IOT'])
   sheet_linde.update_cell(4, 3, prices['ETH'])
+  '''
 
   sheet.update_cell(2, 2, prices['BTC'])
   sheet.update_cell(3, 2, prices['ETH'])
@@ -157,7 +159,7 @@ def main_execute():
   get_currencies_prices("https://coinmarketcap.com/all/views/all/", prices)
 
   sorted_prices = sorted(prices.items(), key=operator.itemgetter(1), reverse=True)
-  print print_prices(sorted_prices)
+  #print print_prices(sorted_prices)
 
   update_spreadsheet(prices)
 

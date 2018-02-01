@@ -10,7 +10,9 @@ print('\n                   IOT/USD Market on Bitfinex:')
 exchange = ccxt.bitfinex () 
 exchange.load_markets ()
 
-iota_ticker = exchange.fetch_ticker('IOT/USD')
+#pdb.set_trace()
+
+iota_ticker = exchange.fetch_ticker('IOTA/BTC')
 
 #pp.pprint(iota_ticker)
 
@@ -31,7 +33,7 @@ delay = 2
 count = 0
 while(count < 100):
 	count += 1
-	orderbook = exchange.fetch_order_book ('IOT/USD')
+	orderbook = exchange.fetch_order_book ('IOTA/USD')
 	bid = orderbook['bids'][0][0] if len (orderbook['bids']) > 0 else None
 	ask = orderbook['asks'][0][0] if len (orderbook['asks']) > 0 else None
 	spread = (ask - bid) if (bid and ask) else None

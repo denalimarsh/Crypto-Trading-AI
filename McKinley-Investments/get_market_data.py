@@ -5,7 +5,10 @@ import MySQLdb
 import decimal
 
 import operator
-import urllib2
+
+import urllib.request
+import urllib.error
+
 from bs4 import BeautifulSoup
 
 import pdb 
@@ -18,7 +21,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pprint
 
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 config = SafeConfigParser()
 config.read('../Config/config.ini')
@@ -60,12 +63,12 @@ def access_website(url):
        'Connection': 'keep-alive'}
 
 
-  req = urllib2.Request(url, headers=hdr)
+  req = urllib.request.Request(url, headers=hdr)
   
   try:
-      cryptocoin_html = urllib2.urlopen(req)
-  except urllib2.HTTPError, e:
-      print e.fp.read()
+    cryptocoin_html = urllib.request.urlopen(req)
+  except urllib.error.HTTPError as e:
+    print(e.fp.read())
 
   cryptocoin_soup = BeautifulSoup(cryptocoin_html, "html.parser")
 
@@ -144,6 +147,7 @@ def get_cryptocoin_market_data():
     print(coin)
 
   print('Coin market data collected!\n')
+  print(coins)
 
   store_market_data(coins)
 
