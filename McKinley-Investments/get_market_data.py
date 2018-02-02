@@ -78,7 +78,7 @@ def coin_setup():
   curr_time = datetime.now()
 
   coins = []
-  coin_names = ['bitcoin', 'ethereum', 'iota', 'substratum', 'siacoin']
+  coin_names = ['bitcoin', 'ethereum', 'iota', 'substratum', '0x', 'icon', 'oysterpearl', 'bounty0x', 'ethorse', 'aelf', 'trac','bitboost']
 
 
   for coin in coin_names:
@@ -93,32 +93,43 @@ def strip_to_float(object):
   non_decimal = re.compile(r'[^\d.]+')
   return float(non_decimal.sub('', object))
 
-def get_cryptocoin_market_data():
-
-  #Open cryptocoin website
-  cryptocoin_soup = access_website('https://www.worldcoinindex.com/')
-
-  #Set up coins with names
-  coins = coin_setup()
-
-
-  print('Time: {}'.format(coins[0].datetime))
+def get_coinmarketcap_data(coin):
   
-  #Search cryptocoin HTML for each coin name
-  for coin in coins:
-    market_data = cryptocoin_soup.find("tr", attrs={"data-naam": "{}".format(coin.name)})
+  coinmarketcap_soup = ''
 
-    if market_data == None:
-      print('\'{}\' not found on page 1. Searching the next page...'.format(coin.name))
-      secondary_cryptocoin_soup = access_website('https://www.worldcoinindex.com/2')
-      market_data = secondary_cryptocoin_soup.find("tr", attrs={"data-naam": "{}".format(coin.name)})
+  if coin.name == 'ethorse':
+    coinmarketcap_soup = access_website('https://coinmarketcap.com/currencies/ethorse/')
+  elif coin.name == 'trac':
+    coinmarketcap_soup = access_website('https://coinmarketcap.com/currencies/origintrail/')
+  elif coin.name == 'jibrel':
+    print('jibrel not yet on CMC!')
+    #coinmarketcap_soup = access_website('https://coinmarketcap.com/currencies/ethorse/')
+  elif coin.name == 'bitboost':
+    coinmarketcap_soup = access_website('https://coinmarketcap.com/currencies/bitboost/')
+  else:
+    print('how did you end up here...? (Coin name not recognized on CMC)')
 
-      if market_data == None:
-        print('\'{}\' not found on page 2. Searching the next page...'.format(coin.name))
-        secondary_cryptocoin_soup = access_website('https://www.worldcoinindex.com/3')
-        market_data = secondary_cryptocoin_soup.find("tr", attrs={"data-naam": "{}".format(coin.name)})
+  #get price
+  market_data = coinmarketcap_soup.find("div", attrs={"class": "col-lg-10"})
+  current_price_data = market_data.find("span", attrs={"id": "quote_price"})
+  current_price = current_price_data.get('data-usd')
+  current_price_float = strip_to_float(current_price)
+  coin.price = current_price_float
 
-    #Get relevant market data
+  '''
+  #get market cap, volume
+  subset_market_data = coinmarketcap_soup.find("div", attrs={"class": "row bottom-margin-2x"})
+  market_cap_data = subset_market_data.find("span", attrs={"data-currency-market-cap"})
+  market_cap = market_cap_data.get('data-usd')
+  market_cap_float = strip_to_float(market_cap)
+  coin.market_cap = market_cap_float
+  '''
+
+  return coin
+
+def strip_cryptocoin_data(coin, market_data):
+
+  #Get relevant market data
     current_price_data = market_data.find("td", attrs={"number pricekoers lastprice"})
     current_price = current_price_data.get('data-sort-value')
     current_price_float = strip_to_float(current_price)
@@ -144,13 +155,82 @@ def get_cryptocoin_market_data():
     market_cap_float = strip_to_float(market_cap)
     coin.market_cap = market_cap_float
 
+    return coin
+
+
+def get_cryptocoin_market_data():
+
+  #Open cryptocoin website
+  cryptocoin_soup = access_website('https://www.worldcoinindex.com/')
+
+  #Set up coins with names
+  coins = coin_setup()
+
+  print('Time: {}'.format(coins[0].datetime))
+  
+  #Get cryptocoin HTML block
+  for coin in coins:
+    market_data = cryptocoin_soup.find("tr", attrs={"data-naam": "{}".format(coin.name)})
+    page_number = 0
+
+    #Search cryptocoin HTML for coin name
+    while market_data == None and page_number <= 5:
+      page_number += 1
+      circular_cryptocoin_soup = access_website('https://www.worldcoinindex.com/{}'.format(page_number))
+      market_data = circular_cryptocoin_soup.find("tr", attrs={"data-naam": "{}".format(coin.name)})
+
+    #if coin not found, search coinmarketcap
+    if market_data == None:
+      print('\'{}\' not found on cryptocoin => searching coinmarketcap...'.format(coin.name, page_number))
+      coin = get_coinmarketcap_data(coin)
+
+      if coin.price == None:
+        print('\'{}\' price not found on coinmarketcap.'.format(coin.name))
+
+    else:
+      coin = strip_cryptocoin_data(coin, market_data)
+
     print(coin)
 
   print('Coin market data collected!\n')
-  print(coins)
 
-  store_market_data(coins)
+  update_spreadsheet(coins)
+  #store_market_data(coins)
 
+def update_spreadsheet(coins):
+
+  print ('\n...calculating positions...')
+
+  scope = ['https://spreadsheets.google.com/feeds']
+  creds = ServiceAccountCredentials.from_json_keyfile_name('../Config/sheets.json', scope)
+  client = gspread.authorize(creds)
+
+  sheet = client.open('Crypto Positions').sheet1
+
+  for index, coin in enumerate(coins):
+    coin = coins[index]
+    row_number = sheet_switch(coin.name)
+
+    if coin.price != 0 and row_number != 0:
+      sheet.update_cell(row_number, 3, coin.price)
+
+
+def sheet_switch(x):
+  return{
+    'bitcoin': 2,
+    'ethereum': 3,
+    'iota': 4,
+    'substratum': 5,
+    '0x': 6,
+    'bitboost': 7,
+    'icon': 8,
+    'oysterpearl': 9,
+    'bounty0x': 10,
+    'ethorse': 11,
+    'jibrel': 12,
+    'aelf': 13,
+    'trac': 14
+  }.get(x, 0)
 
 def store_market_data(coins):
 
@@ -190,7 +270,7 @@ def database_to_dataframe(database):
 
 get_cryptocoin_market_data()
 
-df = database_to_dataframe('sql-market-data')
-print(df)
+#df = database_to_dataframe('sql-market-data')
+#print(df)
 
 
