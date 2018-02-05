@@ -19,30 +19,16 @@ pp = pprint.PrettyPrinter(indent=1)
 
 
 class MarketStreamer:
-	'Exchange plugin to facilitate online trading'
+	'Collect and store ethereum market data from a public online exchange'
 
 	def __init__(self):
 		self.exchange = self.initialize_exchange()
 		self.db = self.initialize_database('gdax-market-data')
 
-	def __repr__(self):
-		pass
-
 	def initialize_exchange(self):
 		self.exchange = ccxt.gdax()
 		self.exchange.fetch_markets()
-		#self.initialize_api()
 		return self.exchange
-
-	def initialize_api(self):
-		try:
-			self.exchange.apiKey = config.get('gdax-api', 'api_key')
-			self.exchange.secret = config.get('gdax-api', 'secret')
-			self.exchange.password = config.get('gdax-api', 'password')
-		except:
-			print('\nError connecting to {}'.format(self.exchange.id))
-		finally:
-			print('\nConnected to {}\'s API...'.format(self.exchange.id))
 
 	def initialize_database(self, database_name):
 	  try:
@@ -59,23 +45,13 @@ class MarketStreamer:
 		self.db.close()
 
 	def fetch_ticker(self, market_id):
-
 		ticker = self.exchange.fetch_ticker('{}'.format(market_id))
 
-		#current bid/ask/price
-		#ask = ticker['info'].get('ask')
-		#bid = ticker['info'].get('bid')
-		#price = ticker['info'].get('price')
-
-		#last price, market volume as floats
 		last = ticker['last']
 		market_volume = ticker['baseVolume']
-
-		#time to datetime
 		date_time = dateutil.parser.parse(ticker['datetime'])
 
 		print('${}, {}'.format(last, date_time))
-
 		self.store_market_data(last, market_volume, date_time)
 
 	def store_market_data(self, price, market_volume, time_stamp):
@@ -95,4 +71,5 @@ class MarketStreamer:
 
 
 streamer = MarketStreamer()
-streamer.start_market_stream('ETH/USD', 5)
+streamer.start_market_stream('ETH/USD', 60)
+streamer.close_database()

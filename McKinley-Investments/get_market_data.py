@@ -79,6 +79,7 @@ def coin_setup():
 
   coins = []
   coin_names = ['bitcoin', 'ethereum', 'iota', 'substratum', '0x', 'icon', 'oysterpearl', 'bounty0x', 'ethorse', 'aelf', 'trac','bitboost']
+  #coin_names = ['bitcoin']
 
 
   for coin in coin_names:
@@ -234,7 +235,7 @@ def sheet_switch(x):
 
 def store_market_data(coins):
 
-  db = initialize_database('sql-market-data')
+  db = initialize_database('crypto-investmentsa')
 
   print('\nStoring market data in SQL database...\n')
 

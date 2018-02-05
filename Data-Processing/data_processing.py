@@ -2,7 +2,6 @@
 
 from __future__ import division
 
-v
 import numpy as np
 import pandas as pd
 import pandas_datareader as web
@@ -12,6 +11,8 @@ import matplotlib.pyplot as plt
 from matplotlib import style
 style.use('ggplot')
 
+import MySQLdb
+
 import sklearn
 from sklearn import model_selection
 from sklearn.linear_model import LinearRegression
@@ -19,17 +20,17 @@ from sklearn.datasets import load_boston
 
 import pdb
 
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 config = SafeConfigParser()
 config.read('../Config/config.ini')
 
 def initializeDatabase():
 	try:
-		db = MySQLdb.connect(host=config.get('sql', 'host'),
-							user=config.get('sql', 'user'),
-							passwd=config.get('sql', 'passwd'),
-							db=config.get('sql', 'db'))
+		db = MySQLdb.connect(host=config.get('gdax-market-data', 'host'),
+							user=config.get('gdax-market-data', 'user'),
+							passwd=config.get('gdax-market-data', 'passwd'),
+							db=config.get('gdax-market-data', 'db'))
 		print('Database initialized!')
 	except ValueError:
 		print('Error connecting to database!')
@@ -37,8 +38,8 @@ def initializeDatabase():
 	return db
 
 def databaseToDataframe(database):
-	df_mysql = pd.read_sql('select * from data;', con=database)
-	df_mysql.set_index('time', inplace=True)
+	df_mysql = pd.read_sql('select * from ethereum;', con=database)
+	df_mysql.set_index('time_stamp', inplace=True)
 	return df_mysql
 
 def calculateMarketStats(dataframe):
@@ -49,9 +50,9 @@ def calculateMarketStats(dataframe):
 	dataframe_third_sma = calculateSMA(dataframe_second_sma, 100)
 
 	#add percentage change by interval
-	dataframe_returns = addReturns(dataframe_third_sma)
+	#dataframe_returns = addReturns(dataframe_third_sma)
 
-	return dataframe_returns
+	return dataframe_third_sma
 
 def addReturns(dataframe):
 
@@ -79,6 +80,9 @@ def calculateSMA(dataframe, ticks):
 
 	#Calculate Simple Moving Average over specified tick count
 	df_tail = dataframe.tail(ticks)
+
+	#this is sooooo stupid...
+	'''
 	price_sum = df_tail['price'].sum()
 	sma = price_sum/ticks
 	print('Simple Moving Average over {} ticks: {}'.format(ticks, sma))
@@ -90,6 +94,10 @@ def calculateSMA(dataframe, ticks):
 			sma_list.append(0)
 		else:
 			sma_list.append(sma)
+
+	'''
+
+	#strategy: ??
 
 	#Concatenate SMA list into dataframe
 	sma_calc = pd.Series(sma_list)
@@ -128,9 +136,6 @@ def price_prediction(processed_data):
 	#lm.fit() -> fits a linear model
 	lm.fit(X_eth, financial_data.price)
 
-	print 'Estimated intercept coefficent:', lm.intercept_
-	print 'Number of coefficients:', len(lm.coef_)
-
 	pd.DataFrame(zip(X_eth.columns, lm.coef_), columns = ['features', 'estimatedCoefficients'])
 
 	#plot to show price vs predicted price:
@@ -146,13 +151,14 @@ def price_prediction(processed_data):
 def main_execute():
 	db = initializeDatabase()
 	df = databaseToDataframe(db)
-	processed_df = calculateMarketStats(df)
+	
+	#processed_df = calculateMarketStats(df)
 
-	price_prediction(processed_df)
+	#price_prediction(processed_df)
 
 	#plot the current data by price
-	#processed_df['price'].plot()
-	#plt.show()
+	df['price'].plot()
+	plt.show()
 
 	db.close()
 
