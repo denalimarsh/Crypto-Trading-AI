@@ -108,10 +108,11 @@ class Bot:
 bot = Bot()
 bot.check_balance()
 
-df = bot.database_to_dataframe()
-
-#order_id = bot.sell_order_limit('ETH/USD', 0.01, sell_price)
-#order_id = bot.buy_order_limit('ETH/USD', 0.01, buy_price)
-#bot.cancel_order(order_id)
+#df = bot.database_to_dataframe()
 
 #bot.fetch_my_trades()
+
+#order_id = bot.sell_order_limit('ETH/USD', 0.01, 2000)
+#order_id = bot.buy_order_limit('ETH/USD', 0.01, 300)
+bot.cancel_order(order_id)
+

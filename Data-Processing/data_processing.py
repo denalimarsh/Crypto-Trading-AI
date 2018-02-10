@@ -25,142 +25,118 @@ from configparser import SafeConfigParser
 config = SafeConfigParser()
 config.read('../Config/config.ini')
 
-def initializeDatabase():
-	try:
-		db = MySQLdb.connect(host=config.get('gdax-market-data', 'host'),
-							user=config.get('gdax-market-data', 'user'),
-							passwd=config.get('gdax-market-data', 'passwd'),
-							db=config.get('gdax-market-data', 'db'))
-		print('Database initialized!')
-	except ValueError:
-		print('Error connecting to database!')
-	
-	return db
 
-def databaseToDataframe(database):
-	df_mysql = pd.read_sql('select * from ethereum;', con=database)
-	df_mysql.set_index('time_stamp', inplace=True)
-	return df_mysql
+class DataProcessor:
 
-def calculateMarketStats(dataframe):
+	def __init__(self):
+		self.db = self.initialize_database()
+		self.df = self.database_to_dataframe()
 
-	#calculate SMA at different time intervals
-	dataframe_first_sma = calculateSMA(dataframe, 10)
-	dataframe_second_sma = calculateSMA(dataframe_first_sma, 20)
-	dataframe_third_sma = calculateSMA(dataframe_second_sma, 100)
+	def initialize_database(self):
+		try:
+			self.db = MySQLdb.connect(host=config.get('gdax-market-data', 'host'),
+								user=config.get('gdax-market-data', 'user'),
+								passwd=config.get('gdax-market-data', 'passwd'),
+								db=config.get('gdax-market-data', 'db'))
+			print('Database initialized!')
+		except ValueError:
+			print('Error connecting to database!')
+		
+		return self.db
 
-	#add percentage change by interval
-	#dataframe_returns = addReturns(dataframe_third_sma)
+	def database_to_dataframe(self):
+		df_mysql = pd.read_sql('select * from ethereum;', con=self.db)
+		df_mysql.set_index('time_stamp', inplace=True)
+		return df_mysql
 
-	return dataframe_third_sma
-
-def addReturns(dataframe):
-
-	percentage_change = []
-
-	#take first item (no percentage change) from row_iterator
-	row_iterator = dataframe.iterrows()
-	_, last = row_iterator.next()
-	percentage_change.append(0)
-
-	#calculate percentage change, add to list
-	for i, row in row_iterator:
-		price_delta = (row['price']-last['price'])/last['price']
-		percentage_change.append(price_delta)
-		last = row
-
-	#assign values back to the dataframe
-	returns = pd.Series(percentage_change)
-	dataframe = dataframe.assign(returns=returns.values)
-
-	return dataframe
+	def high_low_spread(self):
+		max_price = self.df['price'].max()
+		min_price = self.df['price'].min()
+		mean_price = self.df['price'].mean()
+		pdb.set_trace()
 
 
-def calculateSMA(dataframe, ticks):
+	def calc_market_stats(self):
 
-	#Calculate Simple Moving Average over specified tick count
-	df_tail = dataframe.tail(ticks)
+		#calculate SMA at different time intervals
+		self.sma_calc(200)
+		self.sma_calc(500)
+		self.sma_calc(1000)
 
-	#this is sooooo stupid...
-	'''
-	price_sum = df_tail['price'].sum()
-	sma = price_sum/ticks
-	print('Simple Moving Average over {} ticks: {}'.format(ticks, sma))
+		#calculate percentage change
+		self.calc_percent_change()
 
-	#Populate SMA into list
-	sma_list = []
-	for x in range (0, len(dataframe)):
-		if x < len(dataframe)-ticks:
-			sma_list.append(0)
-		else:
+	def calc_percent_change(self):
+
+		'''
+		Calculate percentage change from each price datapoint
+		'''
+
+		percent_change = []
+		prev_price = 0
+		count = 0
+
+		for time, price in self.df['price'].iteritems():
+			if count > 0:
+				price_delta = (price-prev_price)/prev_price
+				percent_change.append(price_delta)
+			else:
+				percent_change.append(None)
+			count += 1
+			prev_price = price
+
+		#assign values back to the dataframe
+		returns = pd.Series(percent_change)
+		self.df = self.df.assign(returns=returns.values)
+		self.df = self.df.rename(columns={'column_name': returns})
+
+	def sma_calc(self, n):
+
+		'''
+		Calculate Simple Moving Average (SMA) over the preceeding n periods
+		'''
+
+		stack = []
+		sma_list = []
+		for i in range(0, n):
+			sma_list.append(None)
+
+		#iterate over data starting n periods out
+		for x in range (n, len(self.df)):
+			#get dataframe for preceeding n periods
+			sma_df = self.df.iloc[(x-n):x]['price']
+
+			#add prices to stack 
+			for time, price in sma_df.iteritems():
+				stack.append(price)
+
+			#calculate Simple Moving Average (SMA)
+			sma = 0
+			while len(stack) >= 1:
+				sma += stack.pop()
+			sma = sma / n
 			sma_list.append(sma)
 
-	'''
+		#Concatenate SMA list into dataframe
+		sma_calc = pd.Series(sma_list)
+		self.df = self.df.assign(column_name=sma_calc.values)
 
-	#strategy: ??
-
-	#Concatenate SMA list into dataframe
-	sma_calc = pd.Series(sma_list)
-	dataframe = dataframe.assign(column_name=sma_calc.values)
-
-	#Rename to unique column name with tick count
-	column_name = 'sma_{}'.format(ticks)
-	dataframe = dataframe.rename(columns={'column_name': column_name})
-
-	return dataframe
-
-def price_prediction(processed_data):
-
-	financial_data = processed_data
-
-	boston = load_boston()
-	bos = pd.DataFrame(boston.data)
-
-	bos.head()
-	bos.columns = boston.feature_names
-	bos.head()
-
-	bos['PRICE'] = boston.target
-
-	#Y = boston housing price(also called “target” data in Python)
-	#X = all the other features (or independent variables)
-
-	X = bos.drop('PRICE', axis = 1)
-
-	X_eth = financial_data.drop('price', axis = 1)
-
-	#pdb.set_trace()
-
-	lm = LinearRegression()
-
-	#lm.fit() -> fits a linear model
-	lm.fit(X_eth, financial_data.price)
-
-	pd.DataFrame(zip(X_eth.columns, lm.coef_), columns = ['features', 'estimatedCoefficients'])
-
-	#plot to show price vs predicted price:
-
-	#lm.predict() functionality: Predict Y using the linear model with estimated coefficients
-
-	plt.scatter(X_eth.volume, lm.predict(X_eth), c='b', s=2)
-	plt.xlabel('Prices: $Y_i$')
-	plt.ylabel('Predicted prices: $\hat{Y}_i$')
-	plt.title('Price vs Predicted Prices: $Y_i$ vs $\hat{Y}_i$')
-	plt.show()
+		#Rename to unique column name with count
+		column_name = 'sma_{}'.format(n)
+		self.df = self.df.rename(columns={'column_name': column_name})
 
 def main_execute():
-	db = initializeDatabase()
-	df = databaseToDataframe(db)
-	
-	#processed_df = calculateMarketStats(df)
+	processor = DataProcessor()
+	processor.calc_market_stats()
 
-	#price_prediction(processed_df)
-
-	#plot the current data by price
-	df['price'].plot()
+	#plot the current data
+	processor.df['price'].plot(c='r', linewidth=0.4)
+	processor.df['sma_200'].plot(c='b', linewidth=0.4)
+	processor.df['sma_500'].plot(c='g', linewidth=0.4)
+	processor.df['sma_1000'].plot(c='y', linewidth=0.4)
 	plt.show()
 
-	db.close()
+	processor.db.close()
 
 main_execute()
 
@@ -220,6 +196,46 @@ def show_plot(dataframe, ticks):
 #function to predict price
 
 '''
+
+def price_prediction_test(processed_data):
+
+		financial_data = processed_data
+
+		boston = load_boston()
+		bos = pd.DataFrame(boston.data)
+
+		bos.head()
+		bos.columns = boston.feature_names
+		bos.head()
+
+		bos['PRICE'] = boston.target
+
+		#Y = boston housing price(also called “target” data in Python)
+		#X = all the other features (or independent variables)
+
+		X = bos.drop('PRICE', axis = 1)
+
+		X_eth = financial_data.drop('price', axis = 1)
+
+		#pdb.set_trace()
+
+		lm = LinearRegression()
+
+		#lm.fit() -> fits a linear model
+		lm.fit(X_eth, financial_data.price)
+
+		pd.DataFrame(zip(X_eth.columns, lm.coef_), columns = ['features', 'estimatedCoefficients'])
+
+		#plot to show price vs predicted price:
+
+		#lm.predict() functionality: Predict Y using the linear model with estimated coefficients
+
+		plt.scatter(X_eth.volume, lm.predict(X_eth), c='b', s=2)
+		plt.xlabel('Prices: $Y_i$')
+		plt.ylabel('Predicted prices: $\hat{Y}_i$')
+		plt.title('Price vs Predicted Prices: $Y_i$ vs $\hat{Y}_i$')
+		plt.show()
+
 def predict_price(dataframe, ticks, prediction_tick):
 
 	#pair dates with ticks in dictionary
