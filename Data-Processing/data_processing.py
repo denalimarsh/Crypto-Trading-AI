@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from __future__ import division
+import statistics
 
 import numpy as np
 import pandas as pd
@@ -49,19 +50,25 @@ class DataProcessor:
 		df_mysql.set_index('time_stamp', inplace=True)
 		return df_mysql
 
+	def get_dataframe_subset(self, row_count):
+		subset_df = self.df.tail(row_count)
+		#subset_df = self.df.tail(row_count)['{}'.format(column)]
+		return subset_df
+
 	def high_low_spread(self):
 		max_price = self.df['price'].max()
 		min_price = self.df['price'].min()
 		mean_price = self.df['price'].mean()
-		pdb.set_trace()
 
-
-	def calc_market_stats(self):
+	def calc_market_stats(self, intervals):
 
 		#calculate SMA at different time intervals
-		self.sma_calc(200)
-		self.sma_calc(500)
-		self.sma_calc(1000)
+		self.sma_calc(intervals[0])
+		self.sma_calc(intervals[1])
+		self.sma_calc(intervals[2])
+
+		#calculate Exponential Weighted Moving Average (EWMA) bands
+		self.calc_bollinger_bands(intervals[2])
 
 		#calculate percentage change
 		self.calc_percent_change()
@@ -125,21 +132,129 @@ class DataProcessor:
 		column_name = 'sma_{}'.format(n)
 		self.df = self.df.rename(columns={'column_name': column_name})
 
+	#does not currently work...
+	def calc_ewma(self, n):
+
+		'''
+		Calculate Elastic Weighted Moving Average over the preceeding n periods
+		'''
+
+		ewma_list = []
+		for i in range(0, n):
+			ewma_list.append(None)
+
+		multiplier = 2/(n+1)
+		stack = []
+
+		for x in range (n, len(self.df)):
+			ewma_df = self.df.iloc[(x-n):x]['price']
+			pdb.set_trace()
+
+			for time, price in ewma_df.iteritems():
+				stack.append(price)
+
+			#calculate ewma
+			ewma = 0
+			while len(stack) >= 1:
+				price = stack.pop()
+				ewma = price*multiplier + (1-multiplier)*ewma
+			ewma_list.append(ewma)
+
+			pdb.set_trace()
+
+		#Concatenate EWMA list into dataframe
+		ewma_calc = pd.Series(ewma_list)
+		self.df = self.df.assign(column_name=ewma_calc.values)
+
+		#Rename to unique column name with count
+		column_name = 'ewma_{}'.format(n)
+		self.df = self.df.rename(columns={'column_name': column_name})
+
+	def calc_bollinger_bands(self, n):
+
+		'''
+		Calculate the Bollinger Bands over the preceeding n periods
+		'''
+
+		upper_band_values = []
+		lower_band_values = []
+
+		for i in range(0, n*2):
+			upper_band_values.append(None)
+			lower_band_values.append(None)
+
+		for x in range (n*2, len(self.df)):
+			#get subset of dataframe as numpy arr
+			mini_df = self.df.iloc[(x-n):x]['sma_{}'.format(n)]
+			numpy_matrix = mini_df.as_matrix()
+
+			#calculate standard deviation
+			standard_dev = np.std(numpy_matrix)
+
+			#calculate upper and lower bounds
+			curr_sma = self.df['sma_{}'.format(n)][x]
+
+			upper_band = curr_sma + (standard_dev*2)
+			upper_band_values.append(upper_band)
+
+			lower_band = curr_sma - (standard_dev*2)
+			lower_band_values.append(lower_band)
+
+		#Concatenate upper into dataframe
+		upper_band_series = pd.Series(upper_band_values)
+		self.df = self.df.assign(column_name=upper_band_series.values)
+		column_name = 'sma_{}_upper'.format(n)
+		self.df = self.df.rename(columns={'column_name': column_name})
+
+		#Concatenate lower into dataframe
+		lower_band_series = pd.Series(lower_band_values)
+		self.df = self.df.assign(column_name=lower_band_series.values)
+		column_name = 'sma_{}_lower'.format(n)
+		self.df = self.df.rename(columns={'column_name': column_name})
+
 def main_execute():
 	processor = DataProcessor()
-	processor.calc_market_stats()
 
-	#plot the current data
-	processor.df['price'].plot(c='r', linewidth=0.4)
-	processor.df['sma_200'].plot(c='b', linewidth=0.4)
-	processor.df['sma_500'].plot(c='g', linewidth=0.4)
-	processor.df['sma_1000'].plot(c='y', linewidth=0.4)
+	intervals = [10, 60, 240]
+	processor.calc_market_stats(intervals)
+
+	subset_df = processor.get_dataframe_subset(1000)
+
+	#plot price, sma
+	subset_df['price'].plot(c='r', linewidth=0.4, label='Price')
+	subset_df['sma_{}'.format(intervals[0])].plot(c='b', linewidth=1, label='{} min'.format(intervals[0]))
+	subset_df['sma_{}'.format(intervals[1])].plot(c='g', linewidth=1, label='{} min'.format(intervals[1]))
+	subset_df['sma_{}'.format(intervals[2])].plot(c='y', linewidth=1, label='{} min'.format(intervals[2]))
+
+	#plot bollinger bands
+	subset_df['sma_{}_upper'.format(intervals[2])].plot(c='black', linewidth=1.5, label='{} upper bound'.format(intervals[2]))
+	subset_df['sma_{}_lower'.format(intervals[2])].plot(c='black', linewidth=1.5, label='{} lower bound'.format(intervals[2]))
+
+	plt.title('ETH/USD Market on GDAX with SMA and Bollinger Bands')
+	plt.ylabel('Price')
+	plt.xlabel('Time')
+
+	plt.legend()
 	plt.show()
 
 	processor.db.close()
 
 main_execute()
 
+'''
+def show_tail_plot(self, df_tail):
+
+	times = list(df_tail.index.values)
+	prices = list(df_tail['price'].values)
+
+	linear_mod = linear_model.LinearRegression()
+	times = np.reshape(times,(len(times),1))
+	linear_mod.fit(times,prices)
+
+	plt.scatter(times,prices,color='yellow')
+	plt.plot(times,linear_mod.predict(times),color='blue',linewidth=3)
+	plt.show()
+'''
 
 #function to calculate exponential moving average
 #WARNING: ema values incorrect
@@ -175,9 +290,9 @@ def calculateEMA(dataframe, ticks):
 #function to plot linear regression model 
 
 '''
-def show_plot(dataframe, ticks):
+def show_plot(self, n):
 
-	df_tail = dataframe.tail(ticks)
+	df_tail = self.df.tail(n)
 	times = list(df_tail.index.values)
 	prices = list(df_tail['price'].values)
 

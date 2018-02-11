@@ -113,6 +113,9 @@ bot.check_balance()
 #bot.fetch_my_trades()
 
 #order_id = bot.sell_order_limit('ETH/USD', 0.01, 2000)
-#order_id = bot.buy_order_limit('ETH/USD', 0.01, 300)
-bot.cancel_order(order_id)
+#order_id = bot.buy_order_limit('ETH/USD', 1.5, 851)
+#bot.cancel_order(order_id)
 
+#sma rules:
+# = Buy Rule: buy if price is below 50 day sma
+# = Exit Rule: exit if price falls below 10 after being above all 3 day sma

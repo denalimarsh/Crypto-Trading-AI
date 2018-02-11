@@ -103,8 +103,7 @@ def get_coinmarketcap_data(coin):
   elif coin.name == 'trac':
     coinmarketcap_soup = access_website('https://coinmarketcap.com/currencies/origintrail/')
   elif coin.name == 'jibrel':
-    print('jibrel not yet on CMC!')
-    #coinmarketcap_soup = access_website('https://coinmarketcap.com/currencies/ethorse/')
+    coinmarketcap_soup = access_website('https://coinmarketcap.com/currencies/jibrel-network/')
   elif coin.name == 'bitboost':
     coinmarketcap_soup = access_website('https://coinmarketcap.com/currencies/bitboost/')
   else:
@@ -235,7 +234,7 @@ def sheet_switch(x):
 
 def store_market_data(coins):
 
-  db = initialize_database('crypto-investmentsa')
+  db = initialize_database('crypto-investments')
 
   print('\nStoring market data in SQL database...\n')
 
