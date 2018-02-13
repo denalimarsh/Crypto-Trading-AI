@@ -181,7 +181,7 @@ def get_cryptocoin_market_data():
 
     #if coin not found, search coinmarketcap
     if market_data == None:
-      print('\'{}\' not found on cryptocoin => searching coinmarketcap...'.format(coin.name, page_number))
+      #print('\'{}\' not found on cryptocoin => searching coinmarketcap...'.format(coin.name, page_number))
       coin = get_coinmarketcap_data(coin)
 
       if coin.price == None:
@@ -190,7 +190,7 @@ def get_cryptocoin_market_data():
     else:
       coin = strip_cryptocoin_data(coin, market_data)
 
-    print(coin)
+    #print(coin)
 
   print('Coin market data collected!\n')
 
@@ -214,6 +214,7 @@ def update_spreadsheet(coins):
     if coin.price != 0 and row_number != 0:
       sheet.update_cell(row_number, 3, coin.price)
 
+  print_positions(sheet)
 
 def sheet_switch(x):
   return{
@@ -267,6 +268,32 @@ def database_to_dataframe(database):
   db.close()
 
   return df_mysql
+
+def print_positions(sheet):
+
+  print('\n    IRA Positions:')
+  print('ETH:    ' + sheet.cell(18,4).value + "   " + sheet.cell(18,5).value)
+
+  print('\n    Holding Positions:')
+
+  print('IOT:    ' + sheet.cell(24,4).value + "   " + sheet.cell(24,5).value)
+  print('ICX:    ' + sheet.cell(25,4).value + "   " + sheet.cell(25,5).value)
+  print('ZRX:    ' + sheet.cell(26,4).value + "   " + sheet.cell(26,5).value)
+  print('ELF:    ' + sheet.cell(27,4).value + "   " + sheet.cell(27,5).value)
+  print('TRAC:   ' + sheet.cell(28,4).value + "   " + sheet.cell(28,5).value)
+  print('SUB:    ' + sheet.cell(32,4).value + "   " + sheet.cell(32,5).value)
+  print('PRL:    ' + sheet.cell(33,4).value + "   " + sheet.cell(33,5).value)
+  print('BNTY:   ' + sheet.cell(34,4).value + "   " + sheet.cell(34,5).value)
+  print('HORSE:  ' + sheet.cell(37,4).value + "   " + sheet.cell(37,5).value)
+  print('Total:  ' + sheet.cell(41,5).value)
+
+  print('\n    Liquid Positions:')
+
+  print('SUB:    ' + sheet.cell(45,4).value + "   " + sheet.cell(45,5).value)
+  print('USD:    ' + sheet.cell(47,4).value + "    " + sheet.cell(47,5).value)
+
+  print('\nTotal:  ' + sheet.cell(50,5).value+'\n')
+
 
 get_cryptocoin_market_data()
 

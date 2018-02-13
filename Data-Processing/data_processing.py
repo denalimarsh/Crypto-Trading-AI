@@ -63,12 +63,13 @@ class DataProcessor:
 	def calc_market_stats(self, intervals):
 
 		#calculate SMA at different time intervals
-		self.sma_calc(intervals[0])
-		self.sma_calc(intervals[1])
-		self.sma_calc(intervals[2])
+		self.sma_calc(intervals)
 
 		#calculate Exponential Weighted Moving Average (EWMA) bands
 		self.calc_bollinger_bands(intervals[2])
+
+		#calculate buy-sell reccomendations
+		#self.calc_buy_sell(intervals)
 
 		#calculate percentage change
 		self.calc_percent_change()
@@ -97,40 +98,43 @@ class DataProcessor:
 		self.df = self.df.assign(returns=returns.values)
 		self.df = self.df.rename(columns={'column_name': returns})
 
-	def sma_calc(self, n):
+	def sma_calc(self, intervals):
 
 		'''
 		Calculate Simple Moving Average (SMA) over the preceeding n periods
 		'''
 
-		stack = []
-		sma_list = []
-		for i in range(0, n):
-			sma_list.append(None)
+		for i, period in enumerate(intervals):
+			n = intervals[i]
 
-		#iterate over data starting n periods out
-		for x in range (n, len(self.df)):
-			#get dataframe for preceeding n periods
-			sma_df = self.df.iloc[(x-n):x]['price']
+			stack = []
+			sma_list = []
+			for i in range(0, n):
+				sma_list.append(None)
 
-			#add prices to stack 
-			for time, price in sma_df.iteritems():
-				stack.append(price)
+			#iterate over data starting n periods out
+			for x in range (n, len(self.df)):
+				#get dataframe for preceeding n periods
+				sma_df = self.df.iloc[(x-n):x]['price']
 
-			#calculate Simple Moving Average (SMA)
-			sma = 0
-			while len(stack) >= 1:
-				sma += stack.pop()
-			sma = sma / n
-			sma_list.append(sma)
+				#add prices to stack 
+				for time, price in sma_df.iteritems():
+					stack.append(price)
 
-		#Concatenate SMA list into dataframe
-		sma_calc = pd.Series(sma_list)
-		self.df = self.df.assign(column_name=sma_calc.values)
+				#calculate Simple Moving Average (SMA)
+				sma = 0
+				while len(stack) >= 1:
+					sma += stack.pop()
+				sma = sma / n
+				sma_list.append(sma)
 
-		#Rename to unique column name with count
-		column_name = 'sma_{}'.format(n)
-		self.df = self.df.rename(columns={'column_name': column_name})
+			#Concatenate SMA list into dataframe
+			sma_calc = pd.Series(sma_list)
+			self.df = self.df.assign(column_name=sma_calc.values)
+
+			#Rename to unique column name with count
+			column_name = 'sma_{}'.format(n)
+			self.df = self.df.rename(columns={'column_name': column_name})
 
 	#does not currently work...
 	def calc_ewma(self, n):
@@ -211,14 +215,55 @@ class DataProcessor:
 		self.df = self.df.assign(column_name=lower_band_series.values)
 		column_name = 'sma_{}_lower'.format(n)
 		self.df = self.df.rename(columns={'column_name': column_name})
+	
+	def calc_buy_sell(self, intervals, mini_df):
+
+		buy_count = 0
+		sell_count = 0
+		row_count = 0
+
+		selling_range = False
+		buying_range = False
+
+		for time, data in mini_df.iterrows():
+			row_count += 1
+
+			short_sma = data.sma_60
+			medium_sma = data.sma_120
+			long_sma = data.sma_760
+
+			if short_sma == None or medium_sma == None or long_sma == None:
+				print('pass')
+			else:
+				if data.price < data.sma_760_lower:
+					if data.price < short_sma and data.price < medium_sma:
+						#print('buying range - ${}'.format(data.price))
+						buy_count += 1
+						if buy_count > 15:
+							print('Execute buy at ${}, time: {}, row {}'.format(data.price, time, row_count))
+							buy_count = 0
+					else:
+						buy_count = 0
+				#if data.price < data.sma_760_upper and data.price > data.sma_760_lower:
+					#if data.price
+				if data.price > data.sma_760_upper:
+					if data.price > short_sma and data.price > medium_sma:
+						#print('selling range - ${}'.format(data.price))
+						sell_count += 1
+						if sell_count > 25:
+							print('Execute sell - ${}, time: {}, row {}'.format(data.price, time, row_count))
+							sell_count = 0
+					else:
+						sell_count = 0
 
 def main_execute():
 	processor = DataProcessor()
 
-	intervals = [10, 60, 240]
+	intervals = [60, 120, 760]
 	processor.calc_market_stats(intervals)
 
-	subset_df = processor.get_dataframe_subset(1000)
+	subset_df = processor.get_dataframe_subset(4500)
+	processor.calc_buy_sell(intervals, subset_df)
 
 	#plot price, sma
 	subset_df['price'].plot(c='r', linewidth=0.4, label='Price')
