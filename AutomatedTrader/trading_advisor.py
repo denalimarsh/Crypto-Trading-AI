@@ -1,8 +1,16 @@
 # coding=utf-8
 
-from Data_Processing.data_processing import DataProcessor
+from data_processing import DataProcessor
 
-import MySQLdb
+import numpy as np
+import pandas as pd
+import pandas_datareader as web
+import scipy.stats as stats
+
+import matplotlib.pyplot as plt
+from matplotlib import style
+style.use('ggplot')
+
 
 import sklearn
 from sklearn import model_selection
@@ -11,20 +19,12 @@ from sklearn.datasets import load_boston
 
 import pdb
 
-from configparser import SafeConfigParser
-
-config = SafeConfigParser()
-config.read('../Config/config.ini')
-
 class Advisor:
 
-	def __init__(self):
-		self.df
+	def __init__(self, intervals):
+		self.processor = DataProcessor(intervals)
 
 	def calc_buy_sell(self, intervals, mini_df):
-
-		#below_count = 0
-		#above_count = 0
 
 		row_count = 0
 
@@ -61,38 +61,19 @@ class Advisor:
 						selling_hold = True
 						buying_hold = False
 						print('Execute sell - ${}, time: {}, row {}'.format(data.price, time, row_count))
-				
-
 
 		print('buys: {}'.format(buys))
 		print('sells: {}'.format(sells))
 
 def main_execute():
-	processor = DataProcessor()
-
 	intervals = [60, 120, 720]
-	processor.calc_market_stats(intervals)
+	advisor = Advisor(intervals)
 
-	subset_df = processor.get_dataframe_subset(3500)
-	processor.calc_buy_sell(intervals, subset_df)
+	subset_df = advisor.processor.get_dataframe_subset(3500)
 
-	#plot price, sma
-	subset_df['price'].plot(c='r', linewidth=0.4, label='Price')
-	subset_df['sma_{}'.format(intervals[0])].plot(c='b', linewidth=1, label='{} min'.format(intervals[0]))
-	#subset_df['sma_{}'.format(intervals[1])].plot(c='g', linewidth=1, label='{} min'.format(intervals[1]))
-	subset_df['sma_{}'.format(intervals[2])].plot(c='y', linewidth=1, label='{} min'.format(intervals[2]))
+	advisor.calc_buy_sell(intervals, subset_df)
+	advisor.processor.plot(subset_df)
 
-	#plot bollinger bands
-	subset_df['sma_{}_upper'.format(intervals[2])].plot(c='black', linewidth=1.5, label='{} upper bound'.format(intervals[2]))
-	subset_df['sma_{}_lower'.format(intervals[2])].plot(c='black', linewidth=1.5, label='{} lower bound'.format(intervals[2]))
-
-	plt.title('ETH/USD Market on GDAX with SMA and Bollinger Bands')
-	plt.ylabel('Price')
-	plt.xlabel('Time')
-
-	plt.legend()
-	plt.show()
-
-	processor.db.close()
+	advisor.processor.db.close()
 
 main_execute()

@@ -29,9 +29,11 @@ config.read('../Config/config.ini')
 
 class DataProcessor:
 
-	def __init__(self):
+	def __init__(self, intervals):
 		self.db = self.initialize_database()
 		self.df = self.database_to_dataframe()
+		self.intervals = intervals
+		self.calc_market_stats()
 
 	def initialize_database(self):
 		try:
@@ -39,7 +41,7 @@ class DataProcessor:
 								user=config.get('gdax-market-data', 'user'),
 								passwd=config.get('gdax-market-data', 'passwd'),
 								db=config.get('gdax-market-data', 'db'))
-			print('Database initialized!')
+			print('DataProcessor database initialized!')
 		except ValueError:
 			print('Error connecting to database!')
 		
@@ -59,13 +61,13 @@ class DataProcessor:
 		min_price = self.df['price'].min()
 		mean_price = self.df['price'].mean()
 
-	def calc_market_stats(self, intervals):
+	def calc_market_stats(self):
 
 		#calculate SMA at different time intervals
-		self.sma_calc(intervals)
+		self.sma_calc()
 
 		#calculate Exponential Weighted Moving Average (EWMA) bands
-		self.calc_bollinger_bands(intervals[2])
+		self.calc_bollinger_bands()
 
 		#calculate buy-sell reccomendations
 		#self.calc_buy_sell(intervals)
@@ -97,14 +99,14 @@ class DataProcessor:
 		self.df = self.df.assign(returns=returns.values)
 		self.df = self.df.rename(columns={'column_name': returns})
 
-	def sma_calc(self, intervals):
+	def sma_calc(self):
 
 		'''
 		Calculate Simple Moving Average (SMA) over the preceeding n periods
 		'''
 
-		for i, period in enumerate(intervals):
-			n = intervals[i]
+		for i, period in enumerate(self.intervals):
+			n = self.intervals[i]
 
 			stack = []
 			sma_list = []
@@ -173,11 +175,13 @@ class DataProcessor:
 		column_name = 'ewma_{}'.format(n)
 		self.df = self.df.rename(columns={'column_name': column_name})
 
-	def calc_bollinger_bands(self, n):
+	def calc_bollinger_bands(self):
 
 		'''
 		Calculate the Bollinger Bands over the preceeding n periods
 		'''
+
+		n = self.intervals[2]
 
 		upper_band_values = []
 		lower_band_values = []
@@ -215,52 +219,25 @@ class DataProcessor:
 		column_name = 'sma_{}_lower'.format(n)
 		self.df = self.df.rename(columns={'column_name': column_name})
 	
-	def calc_buy_sell(self, intervals, mini_df):
+	def plot(self, subset_df):
 
-		#below_count = 0
-		#above_count = 0
+		#plot price, sma
+		subset_df['price'].plot(c='r', linewidth=0.4, label='Price')
+		subset_df['sma_{}'.format(self.intervals[0])].plot(c='b', linewidth=1, label='{} min'.format(self.intervals[0]))
+		#subset_df['sma_{}'.format(intervals[1])].plot(c='g', linewidth=1, label='{} min'.format(intervals[1]))
+		subset_df['sma_{}'.format(self.intervals[2])].plot(c='y', linewidth=1, label='{} min'.format(self.intervals[2]))
 
-		row_count = 0
+		#plot bollinger bands
+		subset_df['sma_{}_upper'.format(self.intervals[2])].plot(c='black', linewidth=1.5, label='{} upper bound'.format(self.intervals[2]))
+		subset_df['sma_{}_lower'.format(self.intervals[2])].plot(c='black', linewidth=1.5, label='{} lower bound'.format(self.intervals[2]))
 
-		selling_hold= True
-		buying_hold = False
+		plt.title('ETH/USD Market on GDAX with SMA and Bollinger Bands')
+		plt.ylabel('Price')
+		plt.xlabel('Time')
 
-		buys = {}
-		sells = {}
-
-		for time, data in mini_df.iterrows():
-			row_count += 1
-
-			short_sma = data.sma_60
-			medium_sma = data.sma_120
-			long_sma = data.sma_720
-			upper_bound = data.sma_720_upper
-			lower_bound = data.sma_720_lower
-
-			cresting_price = (0.02 * long_sma) + long_sma
-			bottom_price = long_sma - (0.02 * long_sma)
-
-
-			if short_sma != None or medium_sma != None or long_sma != None:
-
-				if data.price < long_sma:
-					if data.price > bottom_price and data.price > short_sma and buying_hold == False:
-						buys[row_count] = data.price
-						buying_hold = True
-						selling_hold = False
-						print('Execute buy at ${}, time: {}, row {}'.format(data.price, time, row_count))
-				elif data.price > long_sma:
-					if data.price > cresting_price and data.price < short_sma and selling_hold == False:
-						sells[row_count] = data.price
-						selling_hold = True
-						buying_hold = False
-						print('Execute sell - ${}, time: {}, row {}'.format(data.price, time, row_count))
-				
-
-
-		print('buys: {}'.format(buys))
-		print('sells: {}'.format(sells))
-
+		plt.legend()
+		plt.show()
+'''
 def main_execute():
 	processor = DataProcessor()
 
@@ -290,7 +267,7 @@ def main_execute():
 	processor.db.close()
 
 main_execute()
-
+'''
 '''
 def show_tail_plot(self, df_tail):
 
