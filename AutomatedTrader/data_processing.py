@@ -52,7 +52,6 @@ class DataProcessor:
 
 	def get_dataframe_subset(self, row_count):
 		subset_df = self.df.tail(row_count)
-		#subset_df = self.df.tail(row_count)['{}'.format(column)]
 		return subset_df
 
 	def high_low_spread(self):
@@ -218,57 +217,63 @@ class DataProcessor:
 	
 	def calc_buy_sell(self, intervals, mini_df):
 
-		buy_count = 0
-		sell_count = 0
+		#below_count = 0
+		#above_count = 0
+
 		row_count = 0
 
-		selling_range = False
-		buying_range = False
+		selling_hold= True
+		buying_hold = False
+
+		buys = {}
+		sells = {}
 
 		for time, data in mini_df.iterrows():
 			row_count += 1
 
 			short_sma = data.sma_60
 			medium_sma = data.sma_120
-			long_sma = data.sma_760
+			long_sma = data.sma_720
+			upper_bound = data.sma_720_upper
+			lower_bound = data.sma_720_lower
 
-			if short_sma == None or medium_sma == None or long_sma == None:
-				print('pass')
-			else:
-				if data.price < data.sma_760_lower:
-					if data.price < short_sma and data.price < medium_sma:
-						#print('buying range - ${}'.format(data.price))
-						buy_count += 1
-						if buy_count > 15:
-							print('Execute buy at ${}, time: {}, row {}'.format(data.price, time, row_count))
-							buy_count = 0
-					else:
-						buy_count = 0
-				#if data.price < data.sma_760_upper and data.price > data.sma_760_lower:
-					#if data.price
-				if data.price > data.sma_760_upper:
-					if data.price > short_sma and data.price > medium_sma:
-						#print('selling range - ${}'.format(data.price))
-						sell_count += 1
-						if sell_count > 25:
-							print('Execute sell - ${}, time: {}, row {}'.format(data.price, time, row_count))
-							sell_count = 0
-					else:
-						sell_count = 0
+			cresting_price = (0.02 * long_sma) + long_sma
+			bottom_price = long_sma - (0.02 * long_sma)
+
+
+			if short_sma != None or medium_sma != None or long_sma != None:
+
+				if data.price < long_sma:
+					if data.price > bottom_price and data.price > short_sma and buying_hold == False:
+						buys[row_count] = data.price
+						buying_hold = True
+						selling_hold = False
+						print('Execute buy at ${}, time: {}, row {}'.format(data.price, time, row_count))
+				elif data.price > long_sma:
+					if data.price > cresting_price and data.price < short_sma and selling_hold == False:
+						sells[row_count] = data.price
+						selling_hold = True
+						buying_hold = False
+						print('Execute sell - ${}, time: {}, row {}'.format(data.price, time, row_count))
+				
+
+
+		print('buys: {}'.format(buys))
+		print('sells: {}'.format(sells))
 
 def main_execute():
 	processor = DataProcessor()
 
-	intervals = [60, 120, 760]
+	intervals = [60, 120, 720]
 	processor.calc_market_stats(intervals)
 
-	subset_df = processor.get_dataframe_subset(4500)
+	subset_df = processor.get_dataframe_subset(3500)
 	processor.calc_buy_sell(intervals, subset_df)
 
 	#plot price, sma
 	subset_df['price'].plot(c='r', linewidth=0.4, label='Price')
 	subset_df['sma_{}'.format(intervals[0])].plot(c='b', linewidth=1, label='{} min'.format(intervals[0]))
-	subset_df['sma_{}'.format(intervals[1])].plot(c='g', linewidth=1, label='{} min'.format(intervals[1]))
+	#subset_df['sma_{}'.format(intervals[1])].plot(c='g', linewidth=1, label='{} min'.format(intervals[1]))
 	subset_df['sma_{}'.format(intervals[2])].plot(c='y', linewidth=1, label='{} min'.format(intervals[2]))
 
 	#plot bollinger bands
@@ -299,37 +304,6 @@ def show_tail_plot(self, df_tail):
 	plt.scatter(times,prices,color='yellow')
 	plt.plot(times,linear_mod.predict(times),color='blue',linewidth=3)
 	plt.show()
-'''
-
-#function to calculate exponential moving average
-#WARNING: ema values incorrect
-
-'''
-def calculateEMA(dataframe, ticks):
-
-	#prepare prices and multiplier
-	df_tail = dataframe.tail(ticks)
-	prices_list = df_tail['price'].tolist()
-	prices_array = np.asarray(prices_list)
-
-	#use stack for ema calculations
-	ema_stack = []
-	curr_index = 0
-	ema_stack.append(prices_array[curr_index])
-	multiplier = 2 / ticks + 1
-
-	#calculate ema
-	#while curr_index >= len(prices_array):
-	while len(ema_stack) > 0:
-		if curr_index != len(prices_array)-1:
-			previous_ema = ema_stack.pop()
-			current_ema = (prices_array[curr_index] - previous_ema) * multiplier + previous_ema
-			ema_stack.append(current_ema)
-			curr_index += 1
-		else:
-			ema = ema_stack.pop()
-			print('Exponential Moving Average over {} ticks: {}'.format(ticks, ema))
-			return ema
 '''
 
 #function to plot linear regression model 

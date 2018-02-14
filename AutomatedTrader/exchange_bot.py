@@ -117,7 +117,7 @@ order_id = bot.sell_order_limit('ETH/USD', 0.01, 2000)
 bot.cancel_order(order_id)
 
 #sma rules:
-# = Buy Rule: buy if (60 min && 120 min are below 540 lower bound) && 60 min crossed 150 min
+# = Buy Rule: buy if (60 min && 150 min are below 540 lower bound) && 60 min crossed 150 min upwards
 
 # = Exit Rule: exit 50% if(While(60 && 120 min are above 540 min) 60 min falls below 120 min)
 		# 	   exit 50% if ()
