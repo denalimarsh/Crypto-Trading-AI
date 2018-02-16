@@ -271,6 +271,8 @@ def database_to_dataframe(database):
 
 def print_positions(sheet):
 
+  total_holdings = int(re.sub(r'\W+', '', (sheet.cell(39,5).value))) + int(re.sub(r'\W+', '', (sheet.cell(46,5).value)))
+
   print('\n    IRA Positions:')
   print('ETH:    ' + sheet.cell(18,4).value + "   " + sheet.cell(18,5).value)
 
@@ -283,17 +285,15 @@ def print_positions(sheet):
   print('TRAC:   ' + sheet.cell(28,4).value + "   " + sheet.cell(28,5).value)
   print('SUB:    ' + sheet.cell(32,4).value + "   " + sheet.cell(32,5).value)
   print('PRL:    ' + sheet.cell(33,4).value + "   " + sheet.cell(33,5).value)
-  print('BNTY:   ' + sheet.cell(34,4).value + "   " + sheet.cell(34,5).value)
-  print('HORSE:  ' + sheet.cell(37,4).value + "   " + sheet.cell(37,5).value)
-  print('Total:  ' + sheet.cell(41,5).value)
+  print('HORSE:  ' + sheet.cell(36,4).value + "   " + sheet.cell(36,5).value)
 
   print('\n    Liquid Positions:')
 
-  print('SUB:    ' + sheet.cell(45,4).value + "   " + sheet.cell(45,5).value)
-  print('USD:    ' + sheet.cell(47,4).value + "    " + sheet.cell(47,5).value)
+  print('ETH:    '  + sheet.cell(43,5).value)
+  print('USD:    '  + sheet.cell(44,5).value)
+  print('ETH:    '  + sheet.cell(45,5).value)
 
-  print('\nTotal:  ' + sheet.cell(50,5).value+'\n')
-
+  print('\nInvestments:  ' + str(total_holdings))
 
 get_cryptocoin_market_data()
 
