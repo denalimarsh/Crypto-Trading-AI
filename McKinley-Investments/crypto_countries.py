@@ -121,7 +121,6 @@ class WebBot:
     print('Country Traded!')
     winsound.PlaySound('audio/GameShowWheel.wav', winsound.SND_FILENAME)
     winsound.PlaySound('audio/ChaChing.wav', winsound.SND_FILENAME)
-    winsound.PlaySound('audio/ChaChing.wav', winsound.SND_FILENAME)
 
 def start_stream(delay):
     print('starting stream...')
@@ -132,7 +131,7 @@ def start_stream(delay):
       curr_count = bot.check_my_countries()
 
       if curr_count != bot.country_count:
-        notify()
+        bot.notify()
         bot.country_count = curr_count
       else:
         print('Countries: {}'.format(bot.country_count))
@@ -141,7 +140,7 @@ def start_stream(delay):
 
       time.sleep(delay)
 
-start_stream(60)
+start_stream(500)
 
 '''
 def buy_cheapest_country():
