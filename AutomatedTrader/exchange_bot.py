@@ -111,9 +111,9 @@ bot.check_balance()
 #df = bot.database_to_dataframe()
 #bot.fetch_my_trades()
 
-#order_id = bot.sell_order_limit('ETH/USD', 0.01, 2000)
+order_id = bot.sell_order_limit('ETH/USD', 0.01, 2000)
 #order_id = bot.buy_order_limit('ETH/USD', 1.5, 851)
-#bot.cancel_order(order_id)
+bot.cancel_order(order_id)
 
 #sma rules:
 # = Buy Rule: buy if (60 min && 150 min are below 540 lower bound) && 60 min crossed 150 min upwards

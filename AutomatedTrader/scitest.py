@@ -13,7 +13,7 @@ from sklearn import datasets, linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn import preprocessing
 
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 config = SafeConfigParser()
 config.read('../Config/config.ini')

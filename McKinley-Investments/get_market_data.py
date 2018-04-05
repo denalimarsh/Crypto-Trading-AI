@@ -78,7 +78,7 @@ def coin_setup():
   curr_time = datetime.now()
 
   coins = []
-  coin_names = ['bitcoin', 'ethereum', 'iota', 'substratum', '0x', 'icon', 'oysterpearl', 'bounty0x', 'ethorse', 'aelf', 'trac','bitboost']
+  coin_names = ['bitcoin', 'ethereum', 'iota', 'substratum', '0x', 'icon', 'oysterpearl', 'ethorse', 'aelf', 'trac']
   #coin_names = ['bitcoin']
 
 
@@ -271,29 +271,31 @@ def database_to_dataframe(database):
 
 def print_positions(sheet):
 
-  total_holdings = int(re.sub(r'\W+', '', (sheet.cell(39,5).value))) + int(re.sub(r'\W+', '', (sheet.cell(46,5).value)))
-
   print('\n    IRA Positions:')
-  print('ETH:    ' + sheet.cell(18,4).value + "   " + sheet.cell(18,5).value)
+  print('ETH:    ' + sheet.cell(19,4).value + "   " + sheet.cell(19,5).value)
 
   print('\n    Holding Positions:')
 
-  print('IOT:    ' + sheet.cell(24,4).value + "   " + sheet.cell(24,5).value)
-  print('ICX:    ' + sheet.cell(25,4).value + "   " + sheet.cell(25,5).value)
-  print('ZRX:    ' + sheet.cell(26,4).value + "   " + sheet.cell(26,5).value)
-  print('ELF:    ' + sheet.cell(27,4).value + "   " + sheet.cell(27,5).value)
-  print('TRAC:   ' + sheet.cell(28,4).value + "   " + sheet.cell(28,5).value)
-  print('SUB:    ' + sheet.cell(32,4).value + "   " + sheet.cell(32,5).value)
-  print('PRL:    ' + sheet.cell(33,4).value + "   " + sheet.cell(33,5).value)
-  print('HORSE:  ' + sheet.cell(36,4).value + "   " + sheet.cell(36,5).value)
+  print('IOT:    ' + sheet.cell(25,4).value + "   " + sheet.cell(25,5).value)
+  print('ICX:    ' + sheet.cell(26,4).value + "   " + sheet.cell(26,5).value)
+  print('ZRX:    ' + sheet.cell(27,4).value + "   " + sheet.cell(27,5).value)
+  print('ELF:    ' + sheet.cell(28,4).value + "   " + sheet.cell(28,5).value)
+  print('TRAC:   ' + sheet.cell(29,4).value + "   " + sheet.cell(29,5).value)
+  print('SUB:    ' + sheet.cell(33,4).value + "   " + sheet.cell(33,5).value)
+  print('PRL:    ' + sheet.cell(34,4).value + "   " + sheet.cell(34,5).value)
+  print('HORSE:  ' + sheet.cell(37,4).value + "   " + sheet.cell(37,5).value)
+  print('HORSE:  ' + sheet.cell(38,4).value + "   " + sheet.cell(38,5).value)
+  print('AURA:   ' + sheet.cell(39,4).value + "   " + sheet.cell(39,5).value)
 
   print('\n    Liquid Positions:')
 
-  print('ETH:    '  + sheet.cell(43,5).value)
-  print('USD:    '  + sheet.cell(44,5).value)
-  print('ETH:    '  + sheet.cell(45,5).value)
+  print('CCC:    '  + sheet.cell(44,5).value)
+  print('USD:    '  + sheet.cell(45,5).value)
+  print('ETH:    '  + sheet.cell(46,5).value)
 
-  print('\nInvestments:  ' + str(total_holdings))
+  #total_holdings = int(re.sub(r'\W+', '', (sheet.cell(40,5).value))) + int(re.sub(r'\W+', '', (sheet.cell(47,5).value)))
+
+ # print('\nInvestments:  ' + str(total_holdings))
 
 get_cryptocoin_market_data()
 
