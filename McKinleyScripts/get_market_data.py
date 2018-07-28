@@ -1,26 +1,18 @@
 # coding=utf-8
 
 import MySQLdb
-
 import decimal
-
 import operator
-
 import urllib.request
 import urllib.error
-
 from bs4 import BeautifulSoup
-
 import pdb 
 from datetime import datetime
 import re
-
 import pandas as pd
-
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pprint
-
 from configparser import SafeConfigParser
 
 config = SafeConfigParser()
@@ -77,9 +69,9 @@ def access_website(url):
 def coin_setup():
   curr_time = datetime.now()
 
+  #aurora_dao
   coins = []
   coin_names = ['bitcoin', 'ethereum', 'iota', 'substratum', '0x', 'icon', 'oysterpearl', 'ethorse', 'aelf', 'trac']
-  #coin_names = ['bitcoin']
 
 
   for coin in coin_names:
@@ -106,8 +98,10 @@ def get_coinmarketcap_data(coin):
     coinmarketcap_soup = access_website('https://coinmarketcap.com/currencies/jibrel-network/')
   elif coin.name == 'bitboost':
     coinmarketcap_soup = access_website('https://coinmarketcap.com/currencies/bitboost/')
+  elif coin.name == 'auroradao':
+    coinmarketcap_soup = access_website('https://coinmarketcap.com/currencies/aurora-dao/')
   else:
-    print('how did you end up here...? (Coin name not recognized on CMC)')
+    print('Error: {} not found on Coin Market Cap.'.format(coin.name))
 
   #get price
   market_data = coinmarketcap_soup.find("div", attrs={"class": "col-lg-10"})
@@ -206,15 +200,28 @@ def update_spreadsheet(coins):
   client = gspread.authorize(creds)
 
   sheet = client.open('Crypto Positions').sheet1
+  sheet_linde = client.open('Crypto Positions - Linde Wang').sheet1
 
   for index, coin in enumerate(coins):
     coin = coins[index]
     row_number = sheet_switch(coin.name)
+    row_number_linde = sheet_linde_switch(coin.name)
 
     if coin.price != 0 and row_number != 0:
       sheet.update_cell(row_number, 3, coin.price)
 
-  print_positions(sheet)
+    if coin.price != 0 and row_number_linde != 0:
+      sheet_linde.update_cell(row_number_linde, 3, coin.price)
+
+  #print_positions(sheet)
+
+def sheet_linde_switch(x):
+  return{
+    'ethereum': 4,
+    'iota': 3,
+    'substratum': 6,
+    'icon': 5
+  }.get(x, 0)
 
 def sheet_switch(x):
   return{
@@ -223,8 +230,8 @@ def sheet_switch(x):
     'iota': 4,
     'substratum': 5,
     '0x': 6,
-    'bitboost': 7,
-    'icon': 8,
+    'auradao': 7,
+    'icon': 8, 
     'oysterpearl': 9,
     'bounty0x': 10,
     'ethorse': 11,
@@ -283,13 +290,13 @@ def print_positions(sheet):
   print('TRAC:   ' + sheet.cell(29,4).value + "   " + sheet.cell(29,5).value)
   print('SUB:    ' + sheet.cell(33,4).value + "   " + sheet.cell(33,5).value)
   print('PRL:    ' + sheet.cell(34,4).value + "   " + sheet.cell(34,5).value)
+  print('SHL:    ' + sheet.cell(35,4).value + "   " + sheet.cell(34,5).value)
   print('HORSE:  ' + sheet.cell(37,4).value + "   " + sheet.cell(37,5).value)
   print('HORSE:  ' + sheet.cell(38,4).value + "   " + sheet.cell(38,5).value)
   print('AURA:   ' + sheet.cell(39,4).value + "   " + sheet.cell(39,5).value)
 
   print('\n    Liquid Positions:')
 
-  print('CCC:    '  + sheet.cell(44,5).value)
   print('USD:    '  + sheet.cell(45,5).value)
   print('ETH:    '  + sheet.cell(46,5).value)
 

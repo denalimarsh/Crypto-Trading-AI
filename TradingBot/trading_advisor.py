@@ -19,7 +19,7 @@ from sklearn.datasets import load_boston
 
 import pdb
 
-class Advisor:
+class TradingAdvisor:
 
 	def __init__(self):
 		pass
@@ -37,11 +37,11 @@ class Advisor:
 		for time, data in mini_df.iterrows():
 			row_count += 1
 
-			short_sma = data.sma_60
-			medium_sma = data.sma_120
-			long_sma = data.sma_720
-			upper_bound = data.sma_720_upper
-			lower_bound = data.sma_720_lower
+			short_sma = data.sma_20
+			medium_sma = data.sma_60
+			long_sma = data.sma_120
+			upper_bound = data.sma_120_upper
+			lower_bound = data.sma_120_lower
 
 			cresting_price = (0.02 * long_sma) + long_sma
 			bottom_price = long_sma - (0.02 * long_sma)
@@ -63,11 +63,11 @@ class Advisor:
 
 def main_execute():
 	
-	advisor = Advisor()
+	trading_advisor = TradingAdvisor()
 
-	intervals = [60, 120, 720]
+	intervals = [20, 60, 120]
 	processor = DataProcessor(intervals)
-	subset_df = processor.get_dataframe_subset(3500)
+	subset_df = processor.get_dataframe_subset(500)
 
 	advisor.calc_buy_sell(intervals, subset_df)
 
