@@ -34,5 +34,5 @@ python trading_advisor.py
 
 Execute trades on GDAX with the Bot class:
 ```
-python gdax_bot.py
+python gdax_bot.py 
 ```
